@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="panel-collapsed">
+<div id="home-page" class="page">
+  <div class="home-padel">
+    <div class="home-page-inner">
+      <h1>Mes tournois</h1>
+      <ul id="tournament-list-page" class="tournament-list"></ul>
+      <button id="new-tournament-page-btn" class="draw-btn">+ Nouveau tournoi</button>
+    </div>
+  </div>
+
+  <div class="home-darts">
+    <h2>Tournoi de fléchettes</h2>
+    <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
+  </div>
+</div>
+
+<div id="tournament-type-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Nouveau tournoi</h2>
+    <p class="tournament-type-text">Choisissez un type de tournoi</p>
+    <div class="form-actions tournament-type-actions" id="tournament-type-list"></div>
+    <div class="form-actions">
+      <button id="tournament-type-cancel-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="tournament12-view" class="page hidden">
+  <div class="demarcation"></div>
+  <button id="t12-toggle-panel" class="panel-toggle-btn">›</button>
+  <div class="right-overlay"></div>
+  <div class="draw-buttons">
+    <button id="t12-draw-round1-btn" class="draw-btn">Tirer les premiers matchs</button>
+    <button id="t12-draw-round2-btn" class="draw-btn">Tirage 2nd tour</button>
+    <button id="t12-reset-draw-btn" class="reset-btn" title="Réinitialiser le tirage">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7v6h6" />
+        <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="left-panel">
+    <div id="t12-team-count">0 équipe</div>
+    <button id="t12-add-team-btn">+ Ajouter une équipe</button>
+    <button id="t12-fill-random-btn" class="fill-random-btn">Remplir aléatoire</button>
+
+    <ul id="t12-team-list"></ul>
+  </div>
+
+  <button id="tournament12-home-btn" class="home-icon-btn" title="Mes tournois">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+  <div class="blank-page-placeholder">
+    <div class="t12-columns">
+      <svg class="t12-connectors-svg" id="t12-connectors-svg"></svg>
+      <div class="t12-boxes">
+        <div class="t12-box" data-t12-box="left-1"></div>
+        <div class="t12-box" data-t12-box="left-2"></div>
+        <div class="t12-box" data-t12-box="left-3"></div>
+        <div class="t12-box" data-t12-box="left-4"></div>
+        <div class="t12-box" data-t12-box="left-5"></div>
+        <div class="t12-box" data-t12-box="left-6"></div>
+        <div class="t12-box" data-t12-box="left-7"></div>
+        <div class="t12-box" data-t12-box="left-8"></div>
+      </div>
+      <div class="t12-boxes t12-right">
+        <div class="t12-box" data-t12-box="right-1"></div>
+        <div class="t12-box" data-t12-box="right-2"></div>
+        <div class="t12-box" data-t12-box="right-3"></div>
+        <div class="t12-box" data-t12-box="right-4"></div>
+        <div class="t12-box" data-t12-box="right-5"></div>
+        <div class="t12-box" data-t12-box="right-6"></div>
+        <div class="t12-box" data-t12-box="right-7"></div>
+        <div class="t12-box" data-t12-box="right-8"></div>
+      </div>
+      <div class="t12-boxes t12-col3">
+        <div class="t12-box" data-t12-box="col3-1"></div>
+        <div class="t12-box" data-t12-box="col3-2"></div>
+        <div class="t12-box" data-t12-box="col3-3"></div>
+        <div class="t12-box" data-t12-box="col3-4"></div>
+      </div>
+      <div class="t12-boxes t12-col4">
+        <div class="t12-box" data-t12-box="col4-1"></div>
+        <div class="t12-box" data-t12-box="col4-2"></div>
+      </div>
+      <div class="t12-boxes t12-col5">
+        <div class="t12-box" data-t12-box="col5-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tournament9-view" class="page hidden">
+  <div class="demarcation"></div>
+  <button id="t9-toggle-panel" class="panel-toggle-btn">›</button>
+  <div class="right-overlay"></div>
+
+  <div class="draw-buttons">
+    <button id="t9-draw-btn" class="draw-btn">Tirage au sort des poules</button>
+    <button id="t9-reset-draw-btn" class="reset-btn" title="Réinitialiser le tirage">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7v6h6" />
+        <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="t9-schedule-panel">
+    <h2 class="t9-schedule-title" id="t9-schedule-title">Ordre des matchs</h2>
+    <div class="t9-schedule-rounds">
+      <div class="t9-round">
+        <h3>Match 1</h3>
+        <ul class="t9-match-list" id="t9-round-1"></ul>
+      </div>
+      <div class="t9-round">
+        <h3>Match 2</h3>
+        <ul class="t9-match-list" id="t9-round-2"></ul>
+      </div>
+      <div class="t9-round">
+        <h3>Match 3</h3>
+        <ul class="t9-match-list" id="t9-round-3"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="left-panel">
+    <div id="t9-team-count">0 équipe</div>
+    <button id="t9-add-team-btn">+ Ajouter une équipe</button>
+    <button id="t9-fill-random-btn" class="fill-random-btn">Remplir aléatoire</button>
+
+    <ul id="t9-team-list"></ul>
+  </div>
+
+  <button id="tournament9-home-btn" class="home-icon-btn" title="Mes tournois">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+  <div class="blank-page-placeholder">
+    <div class="t9-poules">
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 1</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="poule1-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule1-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule1-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 2</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="poule2-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule2-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule2-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 3</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="poule3-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule3-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="poule3-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="t9-poules">
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 1er</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="p1er-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p1er-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p1er-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 2ème</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="p2eme-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p2eme-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p2eme-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+      <div class="t9-poule">
+        <h3 class="t9-poule-title">Poule 3ème</h3>
+        <div class="t9-boxes">
+          <div class="t9-box t9-team-box" data-t9-box="p3eme-1">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p3eme-2">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+          <div class="t9-box t9-team-box" data-t9-box="p3eme-3">
+            <span class="t9-box-name"></span>
+            <span class="t9-box-diff"></span>
+            <span class="t9-indicators"><span class="t9-indicator"></span><span class="t9-indicator"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="darts-view" class="page hidden">
+  <button id="darts-home-btn" class="home-icon-btn" title="Mes tournois">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+  <h1 id="darts-tournament-title"></h1>
+
+  <div class="darts-results-panel">
+    <h2 class="darts-results-title">Résultats</h2>
+    <ul id="darts-results-list" class="darts-results-list"></ul>
+  </div>
+
+  <div class="darts-actions">
+    <button id="darts-shuffle-btn" class="draw-btn darts-shuffle-btn">Tirage aléatoire</button>
+    <button id="darts-players-btn" class="draw-btn darts-shuffle-btn">Joueurs</button>
+    <button id="darts-reset-btn" class="reset-btn" title="Réinitialiser le tableau">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7v6h6" />
+        <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="darts-col" id="darts-round-1b"></div>
+
+  <div class="darts-poules-row">
+    <div class="darts-col" id="darts-poule-teams"></div>
+  </div>
+
+  <div class="darts-col" id="darts-round-1">
+    <div class="cible-panel">
+      <h3>Cible 1</h3>
+      <div class="cible-match" id="cible-match-1"></div>
+      <h4 class="cible-upcoming-title collapsed" id="cible-upcoming-toggle-1">Prochains matchs <span class="cible-upcoming-arrow">▾</span></h4>
+      <ul class="cible-upcoming-list collapsed" id="cible-schedule-1"></ul>
+    </div>
+    <div class="cible-panel">
+      <h3>Cible 2</h3>
+      <div class="cible-match" id="cible-match-2"></div>
+      <h4 class="cible-upcoming-title collapsed" id="cible-upcoming-toggle-2">Prochains matchs <span class="cible-upcoming-arrow">▾</span></h4>
+      <ul class="cible-upcoming-list collapsed" id="cible-schedule-2"></ul>
+    </div>
+  </div>
+
+  <div id="darts-finale" class="darts-finale hidden">
+    <div class="darts-finale-match">
+      <h3>Demi-finales — 1er Poule A vs 1er Poule C, 1er Poule B vs 1er Poule D</h3>
+      <div class="darts-finale-row" id="darts-finale-semis"></div>
+    </div>
+    <div class="darts-finale-match">
+      <h3>Finale</h3>
+      <div class="darts-finale-row" id="darts-finale-final"></div>
+    </div>
+    <div class="darts-finale-match">
+      <h3>Petite finale (3ème place)</h3>
+      <div class="darts-finale-row" id="darts-finale-petite"></div>
+    </div>
+  </div>
+
+  <div id="darts-players-list-modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Joueurs (<span id="darts-players-count">0</span>/20)</h2>
+      <div class="darts-players-table-wrap">
+        <table class="team-table darts-players-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Prénom</th>
+              <th>Conso</th>
+              <th>Participation</th>
+            </tr>
+          </thead>
+          <tbody id="darts-players-list-tbody"></tbody>
+        </table>
+      </div>
+      <div class="form-actions">
+        <button id="darts-players-list-close-btn">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="darts-reset-modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Réinitialiser le tournoi</h2>
+      <p class="darts-reset-text">Que voulez-vous réinitialiser ?</p>
+      <div class="form-actions darts-reset-actions">
+        <button id="darts-reset-matches-btn">Matchs uniquement<br><small>Les scores repartent à zéro, les joueurs sont conservés</small></button>
+        <button id="darts-reset-all-btn" class="danger-btn">Tout réinitialiser<br><small>Matchs + joueurs à retaper</small></button>
+      </div>
+      <div class="form-actions">
+        <button id="darts-reset-cancel-btn">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tournament-view" class="page hidden">
+<div class="demarcation"></div>
+<button id="toggle-panel" class="panel-toggle-btn">›</button>
+<div class="right-overlay"></div>
+<div class="draw-buttons">
+  <button id="draw-round1-btn" class="draw-btn">Tirer les premiers matchs</button>
+  <button id="draw-round2-btn" class="draw-btn">Tirage 2nd tour</button>
+  <button id="draw-round3-btn" class="draw-btn">Compléter 3ème tour</button>
+  <button id="reset-draw-btn" class="reset-btn" title="Réinitialiser le tirage">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7v6h6" />
+      <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
+    </svg>
+  </button>
+</div>
+
+<div class="left-panel">
+  <div id="team-count">0 équipe</div>
+  <button id="add-team-btn">+ Ajouter une équipe</button>
+
+  <ul id="team-list"></ul>
+</div>
+
+<button id="home-btn" class="home-icon-btn" title="Mes tournois">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 11l9-8 9 8" />
+    <path d="M5 10v10h14V10" />
+  </svg>
+</button>
+
+<div class="main-content">
+  <div class="bracket-columns" id="bracket-columns">
+    <svg class="connectors-svg" id="connectors-svg"></svg>
+    <div class="bracket-col" id="round-1"></div>
+    <div class="bracket-col" id="round-2"></div>
+    <div class="bracket-col" id="round-3"></div>
+    <div class="bracket-col aligned" id="round-4"></div>
+    <div class="bracket-col aligned" id="round-5"></div>
+  </div>
+</div>
+</div>
+
+<div id="team-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Nouvelle équipe</h2>
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Prénom</th>
+          <th>Nom (facultatif)</th>
+          <th>Club (facultatif)</th>
+          <th>Classement (facultatif)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Joueur 1</td>
+          <td><input type="text" id="j1-prenom"></td>
+          <td><input type="text" id="j1-nom"></td>
+          <td><input type="text" id="j1-club"></td>
+          <td><input type="text" id="j1-classement"></td>
+        </tr>
+        <tr>
+          <td>Joueur 2</td>
+          <td><input type="text" id="j2-prenom"></td>
+          <td><input type="text" id="j2-nom"></td>
+          <td><input type="text" id="j2-club"></td>
+          <td><input type="text" id="j2-classement"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="convocation-row">
+      <label for="convocation">Heure de convocation</label>
+      <input type="time" id="convocation">
+    </div>
+
+    <div class="form-actions">
+      <button id="validate-team-btn">Valider</button>
+      <button id="cancel-team-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="team-details-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Équipe</h2>
+    <table class="team-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Prénom</th>
+          <th>Nom (facultatif)</th>
+          <th>Club (facultatif)</th>
+          <th>Classement (facultatif)</th>
+        </tr>
+      </thead>
+      <tbody id="details-tbody"></tbody>
+    </table>
+
+    <div class="convocation-row">
+      <label for="details-convocation">Heure de convocation</label>
+      <input type="time" id="details-convocation">
+    </div>
+
+    <div class="form-actions">
+      <button id="save-team-btn">Enregistrer</button>
+      <button id="delete-team-btn">Supprimer</button>
+      <button id="close-details-btn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<div id="winner-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2 id="winner-modal-title"></h2>
+    <div class="winner-choices" id="winner-choices"></div>
+    <div class="form-actions">
+      <button id="cancel-winner-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="t9-score-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Score du match</h2>
+    <div class="convocation-row">
+      <label id="t9-score-team-a-label"></label>
+      <input type="number" id="t9-score-a" min="0">
+    </div>
+    <div class="convocation-row">
+      <label id="t9-score-team-b-label"></label>
+      <input type="number" id="t9-score-b" min="0">
+    </div>
+    <div class="form-actions">
+      <button id="t9-score-validate-btn">Valider</button>
+      <button id="t9-score-cancel-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script src="/script.js"></script>
+</body>
+</html>

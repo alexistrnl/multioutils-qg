@@ -1,0 +1,1319 @@
+:root {
+  --panel-w: 28%;
+  --darts-w: 25%;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #000;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.page.hidden {
+  display: none;
+}
+
+.blank-page-placeholder {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.blank-page-placeholder p {
+  color: #aaa;
+}
+
+#tournament9-view .blank-page-placeholder {
+  flex-direction: column;
+  gap: 40px;
+}
+
+.t12-columns {
+  position: relative;
+  display: flex;
+  gap: 100px;
+}
+
+.t12-connectors-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.t12-boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.t12-box {
+  width: 160px;
+  height: 48px;
+  border: 1px solid red;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+}
+
+.t12-box.connected {
+  border-color: yellow;
+}
+
+.t12-box.pop-in {
+  animation: bracket-pop-in 0.25s ease;
+}
+
+.t12-box.pickable {
+  cursor: pointer;
+}
+
+.t12-box.pickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.t12-box.champion {
+  border-color: gold;
+  background: rgba(255, 215, 0, 0.15);
+  color: gold;
+  font-weight: 700;
+}
+
+/* Force un cadre sur deux en rouge dans la colonne du milieu, en commencant
+   par le premier, quel que soit son etat "connected". */
+.t12-right .t12-box:nth-child(odd) {
+  border-color: red;
+}
+
+/* Chaque rectangle de la 3e colonne centre face a sa paire de la colonne
+   precedente (2 rectangles de 48px espaces de 16px, donc 64px de pas) :
+   decalage initial de 32px puis 80px entre rectangles (128px de pas, soit
+   le double, pour retomber au centre de chaque paire suivante). */
+.t12-col3 {
+  gap: 80px;
+}
+
+.t12-col3 .t12-box:first-child {
+  margin-top: 32px;
+}
+
+/* Meme principe pour la 4e colonne, face aux paires de la 3e colonne
+   (rectangles centres a 56/184/312/440px -> paires centrees a 120/376px) :
+   96px de decalage initial puis 208px entre les 2 rectangles. */
+.t12-col4 {
+  gap: 208px;
+}
+
+.t12-col4 .t12-box:first-child {
+  margin-top: 96px;
+}
+
+/* Dernier rectangle : centre face aux 2 rectangles de la 4e colonne
+   (centres a 120/376px -> paire centree a 248px). */
+.t12-col5 .t12-box:first-child {
+  margin-top: 224px;
+}
+
+/* Tournoi 9 equipes : 3 poules de 3 equipes, soit 9 rectangles en tout. */
+.t9-poules {
+  display: flex;
+  gap: 60px;
+}
+
+.t9-poule {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.t9-poule-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.t9-boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.t9-box {
+  width: 160px;
+  height: 48px;
+  border: 1px solid yellow;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+}
+
+.t9-box.pop-in {
+  animation: bracket-pop-in 0.25s ease;
+}
+
+.t9-team-box {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.t9-box-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.t9-box-diff {
+  flex: 0 0 auto;
+  font-size: 0.6rem;
+  color: #888;
+}
+
+.t9-indicators {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 4px;
+}
+
+.t9-indicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #444;
+}
+
+.t9-indicator.t9-indicator-win {
+  background: #2ecc71;
+}
+
+.t9-indicator.t9-indicator-loss {
+  background: #e74c3c;
+}
+
+.t9-schedule-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 280px;
+  height: 100vh;
+  padding: 24px 16px;
+  background: #000;
+  border-left: 1px solid #fff;
+  overflow-y: auto;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  z-index: 4;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.t9-schedule-panel::-webkit-scrollbar {
+  display: none;
+}
+
+#tournament9-view .draw-buttons {
+  right: 296px;
+}
+
+.t9-schedule-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.t9-schedule-rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.t9-round h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.t9-match-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.t9-match-list li {
+  padding: 6px 8px;
+  border: 1px solid #333;
+  font-size: 0.75rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.t9-match-list li:hover {
+  background: #1a1a1a;
+  border-color: #666;
+}
+
+.t9-match-list li.t9-match-done {
+  border-color: #2ecc71;
+  background: rgba(46, 204, 113, 0.12);
+}
+
+.t9-match-list li .t9-match-round {
+  display: block;
+  font-size: 0.65rem;
+  color: #888;
+  margin-bottom: 2px;
+}
+
+#home-page {
+  min-height: 100vh;
+  display: flex;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#home-page.hidden {
+  display: none;
+}
+
+.home-padel {
+  width: calc(100% - var(--darts-w));
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-darts {
+  width: var(--darts-w);
+  min-height: 100vh;
+  border-left: 1px solid #fff;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.home-darts h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.home-darts .draw-btn {
+  width: 100%;
+}
+
+#darts-view {
+  min-height: 100vh;
+  padding: 24px;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.darts-results-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 260px;
+  height: 100vh;
+  padding: 24px 16px;
+  background: #000;
+  border-left: 1px solid #fff;
+  overflow-y: auto;
+  z-index: 4;
+}
+
+.darts-results-title {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.darts-results-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.darts-results-empty {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.darts-results-item {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #444;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.8rem;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.darts-results-item:hover {
+  background: #1a1a1a;
+  border-color: #fff;
+}
+
+.darts-results-poule {
+  color: #aaa;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+
+.darts-results-winner {
+  color: #3ecf5f;
+  font-weight: 600;
+}
+
+#darts-view h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.darts-col {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+}
+
+#darts-round-1b {
+  margin-top: 32px;
+}
+
+#darts-round-1 {
+  margin-top: 24px;
+}
+
+.darts-poules-row {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  height: 220px;
+}
+
+.darts-actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.darts-shuffle-btn {
+  width: 260px;
+}
+
+.darts-actions .draw-btn,
+.darts-actions .reset-btn {
+  border-color: #0f6b34;
+}
+
+.darts-actions .reset-btn {
+  align-self: center;
+}
+
+.darts-finale {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1100px;
+}
+
+.darts-finale.hidden {
+  display: none;
+}
+
+.darts-finale-match h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.darts-finale-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.darts-finale-row .cible-match-player-btn {
+  flex: 0 0 220px;
+}
+
+.darts-finale-row .cible-match-player-btn:disabled {
+  cursor: default;
+}
+
+.darts-finale-gap {
+  width: 30px;
+  flex-shrink: 0;
+}
+
+.finale-winner {
+  border-color: gold;
+  background: rgba(255, 215, 0, 0.15);
+  color: gold;
+  font-weight: 700;
+}
+
+.finale-loser {
+  opacity: 0.4;
+}
+
+.darts-col .bracket-box {
+  width: 500px;
+}
+
+.cible-panel {
+  width: 500px;
+  border: 1px solid red;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cible-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+.cible-match {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cible-match-poule {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.cible-match-players {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.cible-match-player-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #0f6b34;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.cible-match-player-btn:hover {
+  background: #1a1a1a;
+}
+
+.cible-match-vs {
+  color: #888;
+}
+
+.cible-match-empty {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+#darts-round-1b .bracket-box {
+  width: 250px;
+}
+
+#darts-poule-teams {
+  align-items: flex-start;
+}
+
+.cible-upcoming-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #ccc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.cible-upcoming-arrow {
+  transition: transform 0.15s ease;
+}
+
+.cible-upcoming-title.collapsed .cible-upcoming-arrow {
+  transform: rotate(-90deg);
+}
+
+.cible-upcoming-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.cible-upcoming-list.collapsed {
+  display: none;
+}
+
+.cible-upcoming-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #222;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+.poule-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 250px;
+}
+
+.poule-col .bracket-box {
+  width: 250px;
+}
+
+.bracket-box.player-box {
+  justify-content: flex-start;
+  gap: 12px;
+  height: 44px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  transition: background 0.15s ease;
+}
+
+.poule-col .bracket-box.player-box:nth-child(even) {
+  background: #0c0c0c;
+}
+
+.player-number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  color: #aaa;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.player-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.match-dots {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.match-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid #888;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.match-dot.won {
+  border-color: #3ecf5f;
+  background: #3ecf5f;
+}
+
+.match-dot.lost {
+  border-color: #e05252;
+  background: #e05252;
+}
+
+.player-box.gold {
+  border-color: gold;
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.player-box.silver {
+  border-color: silver;
+  background: rgba(192, 192, 192, 0.12);
+}
+
+.player-box.bronze {
+  border-color: #cd7f32;
+  background: rgba(205, 127, 50, 0.12);
+}
+
+.home-page-inner {
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+}
+
+.home-page-inner h1 {
+  margin: 0 0 20px;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.home-page-inner .draw-btn {
+  width: 100%;
+}
+
+.demarcation {
+  position: fixed;
+  top: 0;
+  left: var(--panel-w);
+  width: 1px;
+  height: 100%;
+  background: #fff;
+  transition: left 0.2s ease;
+}
+
+.left-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--panel-w);
+  height: 100%;
+  padding: 16px;
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow-y: auto;
+  transition: transform 0.2s ease;
+  z-index: 3;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.left-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.panel-toggle-btn {
+  position: fixed;
+  top: 50%;
+  left: var(--panel-w);
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 48px;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 3;
+  transition: left 0.2s ease;
+}
+
+.panel-toggle-btn:hover {
+  background: #1a1a1a;
+}
+
+body.panel-collapsed .left-panel {
+  transform: translateX(-100%);
+}
+
+body.panel-collapsed .demarcation,
+body.panel-collapsed .panel-toggle-btn {
+  left: 0;
+}
+
+.right-overlay {
+  position: fixed;
+  top: 0;
+  left: var(--panel-w);
+  right: 0;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.2s ease;
+}
+
+body.panel-collapsed .right-overlay {
+  opacity: 0;
+}
+
+.draw-buttons {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 4;
+}
+
+.draw-btn {
+  padding: 10px 16px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.reset-btn {
+  align-self: flex-end;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #1a1a1a;
+}
+
+.home-icon-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.home-icon-btn:hover {
+  background: #1a1a1a;
+}
+
+.tournament-list {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  min-width: 260px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.tournament-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #333;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.tournament-list li:hover {
+  background: #1a1a1a;
+  border-color: #666;
+}
+
+.tournament-list li.active {
+  border-color: gold;
+  color: gold;
+}
+
+.tournament-list-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournament-delete-btn,
+.tournament-rename-btn {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: #888;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.tournament-list li:hover .tournament-delete-btn,
+.tournament-list li:hover .tournament-rename-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tournament-delete-btn:hover {
+  background: #400;
+  color: #ff5c5c;
+}
+
+.tournament-rename-btn:hover {
+  background: #333;
+  color: #fff;
+}
+
+.tournament-rename-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: #000;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.draw-btn:hover {
+  background: #1a1a1a;
+}
+
+#team-count,
+#t12-team-count,
+#t9-team-count {
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+
+#add-team-btn,
+#t12-add-team-btn,
+#t9-add-team-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+#add-team-btn:hover,
+#t12-add-team-btn:hover,
+#t9-add-team-btn:hover {
+  background: #1a1a1a;
+}
+
+.fill-random-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px;
+  background: transparent;
+  color: #aaa;
+  border: 1px dashed #666;
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.fill-random-btn:hover {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+.modal {
+  background: #000;
+  border: 1px solid #fff;
+  padding: 20px;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.modal h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+}
+
+.team-table {
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.team-table th,
+.team-table td {
+  border: 1px solid #444;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.team-table th {
+  color: #ccc;
+  font-weight: 600;
+}
+
+.team-table input {
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 5px;
+  width: 120px;
+}
+
+.convocation-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.convocation-row input {
+  background: #111;
+  color: #fff;
+  border: 1px solid #444;
+  padding: 5px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form-actions button {
+  flex: 1;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.darts-reset-actions {
+  flex-direction: column;
+  margin-bottom: 8px;
+}
+
+.darts-reset-text {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.darts-reset-actions button {
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.darts-reset-actions button small {
+  display: block;
+  font-weight: normal;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.tournament-type-text {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: #ccc;
+}
+
+.tournament-type-actions {
+  flex-direction: column;
+  margin-bottom: 8px;
+  min-width: 260px;
+}
+
+.tournament-type-actions button {
+  text-align: left;
+  padding: 10px 12px;
+}
+
+.tournament-type-actions button small {
+  display: block;
+  font-weight: normal;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.danger-btn {
+  color: red;
+}
+
+.darts-players-table-wrap {
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.darts-players-table-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.darts-players-table {
+  margin-bottom: 0;
+}
+
+.darts-players-table input[type="text"] {
+  width: 160px;
+}
+
+.darts-players-table input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.darts-players-table th:nth-child(1),
+.darts-players-table td:nth-child(1) {
+  text-align: center;
+  color: #888;
+}
+
+.darts-players-table th:nth-child(3),
+.darts-players-table td:nth-child(3),
+.darts-players-table th:nth-child(4),
+.darts-players-table td:nth-child(4) {
+  text-align: center;
+}
+
+#team-list,
+#t12-team-list,
+#t9-team-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+}
+
+#team-list li,
+#t12-team-list li,
+#t9-team-list li {
+  padding: 8px;
+  border: 1px solid #333;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+#team-list li.rank-red,
+#t12-team-list li.rank-red,
+#t9-team-list li.rank-red {
+  border-color: red;
+}
+
+#team-list li.rank-yellow,
+#t12-team-list li.rank-yellow,
+#t9-team-list li.rank-yellow {
+  border-color: yellow;
+}
+
+#team-list li:hover,
+#t12-team-list li:hover,
+#t9-team-list li:hover {
+  background: #1a1a1a;
+  border-color: #666;
+}
+
+.winner-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  min-width: 260px;
+}
+
+.winner-choices button {
+  padding: 10px 12px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.winner-choices button:hover {
+  background: #1a1a1a;
+}
+
+.bracket-box.pickable {
+  cursor: pointer;
+}
+
+.bracket-box.pickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.main-content {
+  position: fixed;
+  top: 0;
+  left: var(--panel-w);
+  right: 0;
+  height: 100%;
+}
+
+.bracket-columns {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 60px;
+}
+
+.connectors-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.connector-line {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.bracket-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 160px;
+}
+
+.bracket-col.aligned {
+  position: relative;
+}
+
+.bracket-col.aligned .bracket-box {
+  position: absolute;
+  left: 0;
+  width: 160px;
+}
+
+#round-5 {
+  width: 200px;
+}
+
+.bracket-box.offset-right {
+  left: 40px;
+}
+
+.bracket-box {
+  height: 48px;
+  border: 1px solid red;
+  background: transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  color: #fff;
+  font-size: 0.65rem;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+}
+
+.bracket-box.connected {
+  border-color: yellow;
+}
+
+.bracket-box.champion {
+  border-color: gold;
+  background: rgba(255, 215, 0, 0.15);
+  color: gold;
+  font-weight: 700;
+}
+
+.bracket-box.pop-in {
+  animation: bracket-pop-in 0.25s ease;
+}
+
+/* Neutralise le transform d'animation le temps que drawConnectors() mesure
+   les positions des cases (sinon une case en plein "pop-in" est mesuree
+   retrecie et les traits qui en partent sont mal places). */
+.bracket-box.measuring {
+  animation: none !important;
+  transform: none !important;
+}
+
+@keyframes bracket-pop-in {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
