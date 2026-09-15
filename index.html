@@ -2,22 +2,32 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title></title>
+<title>QG Padel - Tournois</title>
+<link rel="icon" href="/logo.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="panel-collapsed">
 <div id="home-page" class="page">
-  <div class="home-padel">
-    <div class="home-page-inner">
-      <h1>Mes tournois</h1>
+  <header class="home-header">
+    <img src="/logo.png" alt="QG Padel Club" class="home-logo">
+    <span class="home-header-title">SUITE DE GESTION - Le QG Padel Club</span>
+  </header>
+
+  <div class="home-content">
+    <div class="home-card home-padel">
+      <span class="home-section-accent"></span>
+      <h1>Tournois padel</h1>
+      <p class="home-section-sub">Gérez tableaux et poules</p>
       <ul id="tournament-list-page" class="tournament-list"></ul>
       <button id="new-tournament-page-btn" class="draw-btn">+ Nouveau tournoi</button>
     </div>
-  </div>
 
-  <div class="home-darts">
-    <h2>Tournoi de fléchettes</h2>
-    <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
+    <div class="home-card home-darts">
+      <span class="home-section-accent"></span>
+      <h2>Tournois fléchettes</h2>
+      <p class="home-section-sub">Format poule / finale petite finale</p>
+      <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
+    </div>
   </div>
 </div>
 
@@ -284,9 +294,15 @@
       <path d="M5 10v10h14V10" />
     </svg>
   </button>
-  <h1 id="darts-tournament-title"></h1>
+  <div class="darts-header">
+    <span class="home-section-accent"></span>
+    <h1 id="darts-tournament-title"></h1>
+  </div>
 
-  <div class="darts-results-panel">
+  <button id="darts-results-toggle-btn" class="darts-results-toggle-btn collapsed" title="Afficher/masquer les résultats">‹</button>
+
+  <div class="darts-results-panel collapsed" id="darts-results-panel">
+    <span class="home-section-accent"></span>
     <h2 class="darts-results-title">Résultats</h2>
     <ul id="darts-results-list" class="darts-results-list"></ul>
   </div>

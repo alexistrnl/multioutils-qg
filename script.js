@@ -748,8 +748,16 @@ const tournamentListPage = document.getElementById('tournament-list-page')
 const dartsView = document.getElementById('darts-view')
 const dartsLaunchBtn = document.getElementById('darts-launch-btn')
 const dartsTournamentTitle = document.getElementById('darts-tournament-title')
+const dartsResultsPanel = document.getElementById('darts-results-panel')
+const dartsResultsToggleBtn = document.getElementById('darts-results-toggle-btn')
 const tournament12View = document.getElementById('tournament12-view')
 const tournament9View = document.getElementById('tournament9-view')
+
+dartsResultsToggleBtn.addEventListener('click', () => {
+  const collapsed = dartsResultsPanel.classList.toggle('collapsed')
+  dartsResultsToggleBtn.classList.toggle('collapsed', collapsed)
+  dartsResultsToggleBtn.textContent = collapsed ? '‹' : '›'
+})
 
 // Routage cote client (pas de backend) : /accueil pour la page d'accueil,
 // /tournoi<format>-N pour le tournoi padel dont l'id est "tournoi<format>-N"

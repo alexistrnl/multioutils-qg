@@ -298,6 +298,7 @@ html, body {
 #home-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   color: #fff;
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
@@ -306,29 +307,77 @@ html, body {
   display: none;
 }
 
-.home-padel {
-  width: calc(100% - var(--darts-w));
-  min-height: 100vh;
+.home-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 14px;
+  padding: 16px 24px;
+  border-bottom: 1px solid red;
+  flex-shrink: 0;
 }
 
-.home-darts {
-  width: var(--darts-w);
-  min-height: 100vh;
-  border-left: 1px solid #fff;
-  padding: 24px;
-  overflow-y: auto;
+.home-logo {
+  height: 48px;
+  width: 48px;
+  object-fit: contain;
+  background: transparent;
+}
+
+.home-header-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.home-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 24px;
+  flex: 1;
+  padding: 40px;
+}
+
+.home-card {
+  flex: 1 1 340px;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  padding: 32px;
 }
 
 .home-darts h2 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
-.home-darts .draw-btn {
+.home-section-accent {
+  display: block;
+  width: 36px;
+  height: 3px;
+  background: red;
+  margin-bottom: 16px;
+}
+
+.darts-header .home-section-accent {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-section-sub {
+  margin: 0 0 20px;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.home-card .draw-btn {
   width: 100%;
+  border-radius: 6px;
+  margin-top: auto;
 }
 
 #darts-view {
@@ -336,24 +385,79 @@ html, body {
   padding: 24px;
   color: #fff;
   font-family: 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#darts-view.hidden {
+  display: none;
+}
+
+.darts-header {
+  margin-bottom: 8px;
+}
+
+#darts-view h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+:root {
+  --darts-results-w: 260px;
 }
 
 .darts-results-panel {
   position: fixed;
   top: 0;
   right: 0;
-  width: 260px;
+  width: var(--darts-results-w);
   height: 100vh;
-  padding: 24px 16px;
-  background: #000;
-  border-left: 1px solid #fff;
+  padding: 28px 20px;
+  background: #060606;
+  border-left: 1px solid #262626;
+  box-shadow: -12px 0 30px rgba(0, 0, 0, 0.4);
   overflow-y: auto;
+  overflow-x: hidden;
   z-index: 4;
+  transition: transform 0.2s ease;
+}
+
+.darts-results-panel.collapsed {
+  transform: translateX(100%);
+}
+
+.darts-results-toggle-btn {
+  position: fixed;
+  top: 50%;
+  right: var(--darts-results-w);
+  transform: translate(50%, -50%);
+  width: 24px;
+  height: 48px;
+  padding: 0;
+  background: #000;
+  color: #fff;
+  border: 1px solid #262626;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  z-index: 5;
+  transition: right 0.2s ease, background 0.15s ease;
+}
+
+.darts-results-toggle-btn:hover {
+  background: #1a1a1a;
+}
+
+.darts-results-toggle-btn.collapsed {
+  right: 0;
 }
 
 .darts-results-title {
   margin: 0 0 16px;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
 }
 
 .darts-results-list {
@@ -375,17 +479,19 @@ html, body {
   padding: 10px 12px;
   background: transparent;
   color: #fff;
-  border: 1px solid #444;
+  border: 1px solid #333;
+  border-radius: 8px;
   cursor: pointer;
   text-align: left;
   font-size: 0.8rem;
   font-family: inherit;
   line-height: 1.4;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .darts-results-item:hover {
   background: #1a1a1a;
-  border-color: #fff;
+  border-color: #666;
 }
 
 .darts-results-poule {
@@ -397,12 +503,6 @@ html, body {
 .darts-results-winner {
   color: #3ecf5f;
   font-weight: 600;
-}
-
-#darts-view h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
 }
 
 .darts-col {
@@ -417,6 +517,7 @@ html, body {
 
 #darts-round-1 {
   margin-top: 24px;
+  gap: 32px;
 }
 
 .darts-poules-row {
@@ -440,14 +541,17 @@ html, body {
 .darts-actions .draw-btn,
 .darts-actions .reset-btn {
   border-color: #0f6b34;
+  border-radius: 6px;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .darts-actions .reset-btn {
   align-self: center;
+  border-radius: 50%;
 }
 
 .darts-finale {
-  margin-top: 24px;
+  margin-top: 28px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -461,6 +565,7 @@ html, body {
 .darts-finale-match h3 {
   margin: 0 0 10px;
   font-size: 1rem;
+  font-weight: 600;
   color: #ccc;
 }
 
@@ -488,10 +593,12 @@ html, body {
   background: rgba(255, 215, 0, 0.15);
   color: gold;
   font-weight: 700;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .finale-loser {
   opacity: 0.4;
+  transition: opacity 0.2s ease;
 }
 
 .darts-col .bracket-box {
@@ -500,8 +607,11 @@ html, body {
 
 .cible-panel {
   width: 500px;
-  border: 1px solid red;
-  padding: 16px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-top: 3px solid red;
+  border-radius: 10px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -510,7 +620,8 @@ html, body {
 .cible-panel h3 {
   margin: 0;
   font-size: 1rem;
-  color: #ccc;
+  font-weight: 700;
+  color: #fff;
 }
 
 .cible-match {
@@ -537,13 +648,16 @@ html, body {
   background: transparent;
   color: #fff;
   border: 1px solid #0f6b34;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
   text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .cible-match-player-btn:hover {
   background: #1a1a1a;
+  border-color: #16a350;
 }
 
 .cible-match-vs {
@@ -565,6 +679,8 @@ html, body {
 
 .cible-upcoming-title {
   margin: 0;
+  padding-top: 4px;
+  border-top: 1px solid #222;
   font-size: 0.85rem;
   color: #ccc;
   cursor: pointer;
@@ -660,6 +776,7 @@ html, body {
   border: 1px solid #888;
   background: transparent;
   flex-shrink: 0;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .match-dot.won {
@@ -687,20 +804,10 @@ html, body {
   background: rgba(205, 127, 50, 0.12);
 }
 
-.home-page-inner {
-  width: 100%;
-  max-width: 480px;
-  padding: 24px;
-}
-
-.home-page-inner h1 {
-  margin: 0 0 20px;
-  font-size: 1.5rem;
+.home-padel h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
   font-weight: 700;
-}
-
-.home-page-inner .draw-btn {
-  width: 100%;
 }
 
 .demarcation {
@@ -843,9 +950,9 @@ body.panel-collapsed .right-overlay {
 
 .tournament-list {
   list-style: none;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
   padding: 0;
-  min-width: 260px;
+  min-width: 0;
   max-height: 320px;
   overflow-y: auto;
 }
@@ -855,11 +962,13 @@ body.panel-collapsed .right-overlay {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #333;
-  margin-bottom: 6px;
+  border-radius: 8px;
+  margin-bottom: 8px;
   font-size: 0.9rem;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .tournament-list li:hover {
@@ -869,6 +978,7 @@ body.panel-collapsed .right-overlay {
 
 .tournament-list li.active {
   border-color: gold;
+  background: rgba(255, 215, 0, 0.08);
   color: gold;
 }
 
@@ -976,6 +1086,22 @@ body.panel-collapsed .right-overlay {
   color: #fff;
 }
 
+@keyframes modal-backdrop-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -984,6 +1110,7 @@ body.panel-collapsed .right-overlay {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  animation: modal-backdrop-fade 0.18s ease;
 }
 
 .modal-backdrop.hidden {
@@ -991,11 +1118,14 @@ body.panel-collapsed .right-overlay {
 }
 
 .modal {
-  background: #000;
-  border: 1px solid #fff;
-  padding: 20px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  padding: 24px;
   color: #fff;
   font-family: 'Segoe UI', system-ui, sans-serif;
+  animation: modal-pop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .modal h2 {
@@ -1093,6 +1223,15 @@ body.panel-collapsed .right-overlay {
 .tournament-type-actions button {
   text-align: left;
   padding: 10px 12px;
+  background: transparent;
+  color: gold;
+  border: 1px solid red;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.tournament-type-actions button:hover {
+  background: #1a1a1a;
 }
 
 .tournament-type-actions button small {
