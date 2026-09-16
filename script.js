@@ -1306,6 +1306,12 @@ function licenceSortText(licence) {
 // en tete de liste (triees par nom), le reste suit derriere, aussi trie par
 // nom. Le tableau "licences" garde son ordre d'origine (utilise pour la
 // sauvegarde), seul l'affichage est reordonne.
+// Une ligne "a besoin d'attention" si elle n'est pas payee ou pas enregistree
+// dans le logiciel de licence : ces lignes remontent en tete de liste.
+function needsAttention(licence) {
+  return !licence.paid || !licence.registered
+}
+
 function sortedLicencesForDisplay() {
   const query = normalizeSearch(licencesSearchInput.value)
   return [...licences].sort((a, b) => {
@@ -1314,6 +1320,9 @@ function sortedLicencesForDisplay() {
       const bMatch = licenceSearchText(b).includes(query)
       if (aMatch !== bMatch) return aMatch ? -1 : 1
     }
+    const aAttn = needsAttention(a)
+    const bAttn = needsAttention(b)
+    if (aAttn !== bAttn) return aAttn ? -1 : 1
     return licenceSortText(a).localeCompare(licenceSortText(b))
   })
 }
@@ -1352,6 +1361,7 @@ function renderLicencesTable() {
     paidInput.checked = !!licence.paid
     paidInput.addEventListener('change', () => {
       licence.paid = paidInput.checked
+      renderLicencesTable()
       saveState()
     })
     paidTd.appendChild(paidInput)
@@ -1364,6 +1374,7 @@ function renderLicencesTable() {
     registeredInput.title = 'Enregistré dans le logiciel de licence'
     registeredInput.addEventListener('change', () => {
       licence.registered = registeredInput.checked
+      renderLicencesTable()
       saveState()
     })
     registeredTd.appendChild(registeredInput)
