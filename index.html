@@ -28,6 +28,13 @@
       <p class="home-section-sub">Format poule / finale petite finale</p>
       <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
     </div>
+
+    <div class="home-card home-licences">
+      <span class="home-section-accent"></span>
+      <h2>Licences</h2>
+      <p class="home-section-sub">Paiement, t-shirt, parties offertes</p>
+      <button id="licences-launch-btn" class="draw-btn">Gérer les licences</button>
+    </div>
   </div>
 </div>
 
@@ -387,6 +394,92 @@
       <div class="form-actions">
         <button id="darts-reset-cancel-btn">Annuler</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="licences-view" class="page hidden">
+  <button id="licences-home-btn" class="home-icon-btn" title="Mes tournois">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+
+  <div class="licences-header">
+    <span class="home-section-accent"></span>
+    <h1>Licences</h1>
+  </div>
+
+  <div class="licences-search-row">
+    <button type="button" id="licences-search-toggle-btn" class="licences-search-toggle-btn" title="Rechercher">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M21 21l-4.3-4.3" />
+      </svg>
+    </button>
+    <input type="text" id="licences-search-input" class="licences-search-input collapsed" placeholder="Rechercher un nom...">
+    <button id="licences-add-btn" class="draw-btn licences-add-btn">+ Ajouter licencié</button>
+    <span id="licences-count" class="licences-count"></span>
+  </div>
+
+  <div class="licences-table-wrap">
+    <table class="team-table licences-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Prénom</th>
+          <th>Payé</th>
+          <th>Enregistré</th>
+          <th>T-shirt</th>
+          <th>Parties offertes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="licences-tbody"></tbody>
+    </table>
+  </div>
+
+  <button id="licences-import-btn" type="button" class="home-icon-btn licences-import-btn" title="Importer un CSV">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3v12" />
+      <path d="M7 10l5 5 5-5" />
+      <path d="M4 19h16" />
+    </svg>
+  </button>
+  <input type="file" id="licences-import-file" accept=".csv,text/csv" hidden>
+
+  <button id="licences-export-btn" type="button" class="home-icon-btn licences-export-btn" title="Exporter en CSV">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 15V3" />
+      <path d="M7 8l5-5 5 5" />
+      <path d="M4 19h16" />
+    </svg>
+  </button>
+</div>
+
+<div id="tshirt-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>T-shirt</h2>
+    <p class="tournament-type-text">Couleur</p>
+    <div class="form-actions tshirt-color-actions" id="tshirt-color-actions">
+      <button type="button" class="tshirt-color-btn" data-color="noir"><span class="tshirt-swatch tshirt-swatch-noir"></span>Noir</button>
+      <button type="button" class="tshirt-color-btn" data-color="blanc"><span class="tshirt-swatch tshirt-swatch-blanc"></span>Blanc</button>
+      <button type="button" class="tshirt-color-btn" data-color="rose"><span class="tshirt-swatch tshirt-swatch-rose"></span>Rose</button>
+    </div>
+    <p class="tournament-type-text">Taille</p>
+    <select id="tshirt-size-select" class="tshirt-size-select">
+      <option value="">—</option>
+      <option value="XS">XS</option>
+      <option value="S">S</option>
+      <option value="M">M</option>
+      <option value="L">L</option>
+      <option value="XL">XL</option>
+      <option value="XXL">XXL</option>
+    </select>
+    <div class="form-actions">
+      <button id="tshirt-validate-btn">Valider</button>
+      <button id="tshirt-cancel-btn">Annuler</button>
     </div>
   </div>
 </div>

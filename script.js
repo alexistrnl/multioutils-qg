@@ -71,6 +71,27 @@ function createDartsTournament(name) {
   return id
 }
 
+// Licences club : simple liste a plat (pas de notion de tournoi), persistee
+// comme le reste de l'etat. Chaque ligne suit son paiement, son t-shirt
+// (couleur/taille) et ses 2 parties offertes.
+let licences = []
+let licenceCounter = 0
+
+function createLicence() {
+  licenceCounter++
+  const licence = {
+    id: `licence-${licenceCounter}`,
+    prenom: '',
+    nom: '',
+    paid: false,
+    registered: false,
+    tshirt: { color: null, size: null },
+    freeGames: [false, false],
+  }
+  licences.push(licence)
+  return licence
+}
+
 // Persistance locale (pas de backend) : tout l'etat (tournois padel + leurs
 // equipes/cases de bracket, tournois flechettes) est sauvegarde dans
 // localStorage a chaque modification, pour survivre a un rafraichissement.
@@ -93,7 +114,7 @@ function saveState() {
     else if (active.format === '9') active.boxes = snapshotT9Boxes()
   }
 
-  const data = { tournaments, dartsTournaments, dartsCounter }
+  const data = { tournaments, dartsTournaments, dartsCounter, licences, licenceCounter }
   if (dartsReady) data.darts = snapshotDartsState()
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
@@ -116,10 +137,12 @@ function loadState() {
     tournaments = data.tournaments || []
     dartsTournaments = data.dartsTournaments || []
     dartsCounter = data.dartsCounter || 0
+    licences = data.licences || []
+    licenceCounter = data.licenceCounter || 0
     restoredDartsData = data.darts || null
     migrateLegacyTournamentIds()
     rebuildFormatCounters()
-    return tournaments.length > 0 || dartsTournaments.length > 0
+    return tournaments.length > 0 || dartsTournaments.length > 0 || licences.length > 0
   } catch (e) {
     return false
   }
@@ -752,6 +775,10 @@ const dartsResultsPanel = document.getElementById('darts-results-panel')
 const dartsResultsToggleBtn = document.getElementById('darts-results-toggle-btn')
 const tournament12View = document.getElementById('tournament12-view')
 const tournament9View = document.getElementById('tournament9-view')
+const licencesView = document.getElementById('licences-view')
+const licencesTbody = document.getElementById('licences-tbody')
+const licencesCountEl = document.getElementById('licences-count')
+const licencesSearchInput = document.getElementById('licences-search-input')
 
 dartsResultsToggleBtn.addEventListener('click', () => {
   const collapsed = dartsResultsPanel.classList.toggle('collapsed')
@@ -823,6 +850,11 @@ function renderRoute() {
     return
   }
 
+  if (path === '/licences') {
+    showLicencesView()
+    return
+  }
+
   // Chemin inconnu (ou racine "/") : on retombe sur l'accueil.
   navigateTo('/accueil', true)
 }
@@ -834,6 +866,7 @@ function showHomePage() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  licencesView.classList.add('hidden')
   homePage.classList.remove('hidden')
 }
 
@@ -846,6 +879,7 @@ function showDartsView(t) {
   tournamentView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  licencesView.classList.add('hidden')
   dartsView.classList.remove('hidden')
   checkAllPoulesFinalized()
 }
@@ -855,6 +889,7 @@ function showTournament12View(t) {
   dartsView.classList.add('hidden')
   tournamentView.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  licencesView.classList.add('hidden')
   tournament12View.classList.remove('hidden')
   restoreT12Boxes(t.boxes)
   renderTeams()
@@ -869,6 +904,7 @@ function showTournament9View(t) {
   dartsView.classList.add('hidden')
   tournamentView.classList.add('hidden')
   tournament12View.classList.add('hidden')
+  licencesView.classList.add('hidden')
   tournament9View.classList.remove('hidden')
   restoreT9Boxes(t.boxes)
   renderTeams()
@@ -876,6 +912,16 @@ function showTournament9View(t) {
   renderT9Schedule()
   renderT9Indicators()
   renderT9PointDiffs()
+}
+
+function showLicencesView() {
+  homePage.classList.add('hidden')
+  dartsView.classList.add('hidden')
+  tournamentView.classList.add('hidden')
+  tournament12View.classList.add('hidden')
+  tournament9View.classList.add('hidden')
+  licencesView.classList.remove('hidden')
+  renderLicencesTable()
 }
 
 // Chaque lien relie une colonne source a une colonne cible : chaque "pair"
@@ -1021,6 +1067,383 @@ dartsLaunchBtn.addEventListener('click', () => {
 document.getElementById('darts-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('licences-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+
+document.getElementById('licences-launch-btn').addEventListener('click', () => navigateTo('/licences'))
+
+document.getElementById('licences-add-btn').addEventListener('click', () => {
+  createLicence()
+  renderLicencesTable()
+  saveState()
+})
+
+licencesSearchInput.addEventListener('input', () => renderLicencesTable())
+
+const licencesSearchToggleBtn = document.getElementById('licences-search-toggle-btn')
+
+licencesSearchToggleBtn.addEventListener('click', () => {
+  const opening = licencesSearchInput.classList.contains('collapsed')
+  licencesSearchInput.classList.toggle('collapsed', !opening)
+  licencesSearchToggleBtn.classList.toggle('active', opening)
+  if (opening) {
+    licencesSearchInput.focus()
+  } else {
+    licencesSearchInput.value = ''
+    renderLicencesTable()
+  }
+})
+
+// Import CSV : accepte "," ou ";" comme separateur (exports Excel FR),
+// avec ou sans ligne d'entete "Prenom;Nom". Sans entete reconnu, la
+// 1ere colonne est prise comme prenom et la 2eme (si presente) comme nom.
+// Champs entoures de guillemets geres (y compris "" pour un guillemet litteral).
+function parseCsvLine(line, delimiter) {
+  const cells = []
+  let current = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          current += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        current += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === delimiter) {
+      cells.push(current)
+      current = ''
+    } else {
+      current += ch
+    }
+  }
+  cells.push(current)
+  return cells.map((c) => c.trim())
+}
+
+// "Oui/Non", "true/false", "1/0", "x" (insensible casse/accents) -> booleen.
+function parseBoolCell(v) {
+  const n = normalizeSearch(v)
+  return n === 'oui' || n === 'true' || n === '1' || n === 'x' || n === 'yes'
+}
+
+function importLicencesFromCsv(text) {
+  const lines = text.split(/\r\n|\r|\n/).filter((l) => l.trim() !== '')
+  if (lines.length === 0) return 0
+
+  const delimiter = (lines[0].match(/;/g) || []).length >= (lines[0].match(/,/g) || []).length ? ';' : ','
+
+  let rows = lines.map((l) => parseCsvLine(l, delimiter))
+
+  let prenomIdx = 0
+  let nomIdx = rows[0].length > 1 ? 1 : -1
+  let paidIdx = -1
+  let registeredIdx = -1
+  let colorIdx = -1
+  let sizeIdx = -1
+  let game1Idx = -1
+  let game2Idx = -1
+
+  const headerCells = rows[0].map((c) => normalizeSearch(c))
+  const looksLikeHeader = headerCells.some((c) => c.includes('prenom') || c.includes('nom'))
+  if (looksLikeHeader) {
+    const prenomHeaderIdx = headerCells.findIndex((c) => c.includes('prenom'))
+    const nomHeaderIdx = headerCells.findIndex((c) => c === 'nom' || (c.includes('nom') && !c.includes('prenom')))
+    if (prenomHeaderIdx !== -1) prenomIdx = prenomHeaderIdx
+    nomIdx = nomHeaderIdx
+    paidIdx = headerCells.findIndex((c) => c.includes('paye'))
+    registeredIdx = headerCells.findIndex((c) => c.includes('enregistr'))
+    colorIdx = headerCells.findIndex((c) => c.includes('couleur'))
+    sizeIdx = headerCells.findIndex((c) => c.includes('taille'))
+    const gameIdxs = []
+    headerCells.forEach((c, i) => {
+      if (c.includes('partie')) gameIdxs.push(i)
+    })
+    game1Idx = gameIdxs[0] === undefined ? -1 : gameIdxs[0]
+    game2Idx = gameIdxs[1] === undefined ? -1 : gameIdxs[1]
+    rows = rows.slice(1)
+  }
+
+  let imported = 0
+  rows.forEach((cells) => {
+    const prenom = (cells[prenomIdx] || '').trim()
+    const nom = nomIdx !== -1 ? (cells[nomIdx] || '').trim() : ''
+    if (!prenom && !nom) return
+    const licence = createLicence()
+    licence.prenom = prenom
+    licence.nom = nom
+    if (paidIdx !== -1) licence.paid = parseBoolCell(cells[paidIdx])
+    if (registeredIdx !== -1) licence.registered = parseBoolCell(cells[registeredIdx])
+    if (colorIdx !== -1) {
+      const colorKey = normalizeSearch(cells[colorIdx])
+      if (['noir', 'blanc', 'rose'].includes(colorKey)) licence.tshirt.color = colorKey
+    }
+    if (sizeIdx !== -1) {
+      const size = (cells[sizeIdx] || '').trim().toUpperCase()
+      if (size) licence.tshirt.size = size
+    }
+    if (game1Idx !== -1) licence.freeGames[0] = parseBoolCell(cells[game1Idx])
+    if (game2Idx !== -1) licence.freeGames[1] = parseBoolCell(cells[game2Idx])
+    imported++
+  })
+  return imported
+}
+
+const licencesImportBtn = document.getElementById('licences-import-btn')
+const licencesImportFile = document.getElementById('licences-import-file')
+
+licencesImportBtn.addEventListener('click', () => licencesImportFile.click())
+
+licencesImportFile.addEventListener('change', () => {
+  const file = licencesImportFile.files[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    importLicencesFromCsv(String(reader.result))
+    renderLicencesTable()
+    saveState()
+    licencesImportFile.value = ''
+  }
+  reader.readAsText(file, 'utf-8')
+})
+
+// Export CSV : memes colonnes que l'import "complet" (cf importLicencesFromCsv)
+// pour permettre un aller-retour fidele vers une autre machine.
+function csvEscape(value) {
+  const str = value == null ? '' : String(value)
+  if (/[",\n;]/.test(str)) return '"' + str.replace(/"/g, '""') + '"'
+  return str
+}
+
+function exportLicencesToCsv() {
+  const header = ['Prenom', 'Nom', 'Paye', 'Enregistre', 'Couleur tshirt', 'Taille tshirt', 'Partie offerte 1', 'Partie offerte 2']
+  const lines = [header.map(csvEscape).join(',')]
+  licences.forEach((l) => {
+    lines.push(
+      [
+        l.prenom,
+        l.nom,
+        l.paid ? 'Oui' : 'Non',
+        l.registered ? 'Oui' : 'Non',
+        l.tshirt.color ? TSHIRT_COLOR_LABELS[l.tshirt.color] : '',
+        l.tshirt.size || '',
+        l.freeGames[0] ? 'Oui' : 'Non',
+        l.freeGames[1] ? 'Oui' : 'Non',
+      ]
+        .map(csvEscape)
+        .join(',')
+    )
+  })
+  const csv = lines.join('\r\n')
+  // BOM utf-8 : sans ca, Excel (FR) affiche les accents casses a l'ouverture.
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `licences-${new Date().toISOString().slice(0, 10)}.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+document.getElementById('licences-export-btn').addEventListener('click', () => exportLicencesToCsv())
+
+const TSHIRT_COLOR_LABELS = { noir: 'Noir', blanc: 'Blanc', rose: 'Rose' }
+
+function tshirtSummary(tshirt) {
+  if (!tshirt || (!tshirt.color && !tshirt.size)) return 'Choisir'
+  const colorLabel = tshirt.color ? TSHIRT_COLOR_LABELS[tshirt.color] : null
+  if (colorLabel && tshirt.size) return `${colorLabel} · ${tshirt.size}`
+  return colorLabel || tshirt.size || 'Choisir'
+}
+
+// Repere visuel : la case t-shirt reprend la couleur choisie une fois validee.
+function applyTshirtButtonStyle(btn, tshirt) {
+  btn.textContent = tshirtSummary(tshirt)
+  btn.classList.remove('tshirt-noir', 'tshirt-blanc', 'tshirt-rose')
+  if (tshirt && tshirt.color) btn.classList.add(`tshirt-${tshirt.color}`)
+}
+
+// Accent-insensitive pour que "elodie" trouve "Élodie".
+function normalizeSearch(str) {
+  return (str || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function licenceSearchText(licence) {
+  return normalizeSearch(`${licence.prenom} ${licence.nom}`)
+}
+
+// Tri alphabetique par nom (puis prenom en cas d'egalite).
+function licenceSortText(licence) {
+  return normalizeSearch(`${licence.nom} ${licence.prenom}`)
+}
+
+// La recherche ne filtre pas : elle fait remonter les lignes qui correspondent
+// en tete de liste (triees par nom), le reste suit derriere, aussi trie par
+// nom. Le tableau "licences" garde son ordre d'origine (utilise pour la
+// sauvegarde), seul l'affichage est reordonne.
+function sortedLicencesForDisplay() {
+  const query = normalizeSearch(licencesSearchInput.value)
+  return [...licences].sort((a, b) => {
+    if (query) {
+      const aMatch = licenceSearchText(a).includes(query)
+      const bMatch = licenceSearchText(b).includes(query)
+      if (aMatch !== bMatch) return aMatch ? -1 : 1
+    }
+    return licenceSortText(a).localeCompare(licenceSortText(b))
+  })
+}
+
+function renderLicencesTable() {
+  licencesTbody.innerHTML = ''
+  licencesCountEl.textContent = `${licences.length} licencié${licences.length > 1 ? 's' : ''}`
+  sortedLicencesForDisplay().forEach((licence) => {
+    const row = document.createElement('tr')
+
+    const nomTd = document.createElement('td')
+    const nomInput = document.createElement('input')
+    nomInput.type = 'text'
+    nomInput.value = licence.nom
+    nomInput.addEventListener('change', () => {
+      licence.nom = nomInput.value.trim()
+      saveState()
+    })
+    nomTd.appendChild(nomInput)
+    row.appendChild(nomTd)
+
+    const prenomTd = document.createElement('td')
+    const prenomInput = document.createElement('input')
+    prenomInput.type = 'text'
+    prenomInput.value = licence.prenom
+    prenomInput.addEventListener('change', () => {
+      licence.prenom = prenomInput.value.trim()
+      saveState()
+    })
+    prenomTd.appendChild(prenomInput)
+    row.appendChild(prenomTd)
+
+    const paidTd = document.createElement('td')
+    const paidInput = document.createElement('input')
+    paidInput.type = 'checkbox'
+    paidInput.checked = !!licence.paid
+    paidInput.addEventListener('change', () => {
+      licence.paid = paidInput.checked
+      saveState()
+    })
+    paidTd.appendChild(paidInput)
+    row.appendChild(paidTd)
+
+    const registeredTd = document.createElement('td')
+    const registeredInput = document.createElement('input')
+    registeredInput.type = 'checkbox'
+    registeredInput.checked = !!licence.registered
+    registeredInput.title = 'Enregistré dans le logiciel de licence'
+    registeredInput.addEventListener('change', () => {
+      licence.registered = registeredInput.checked
+      saveState()
+    })
+    registeredTd.appendChild(registeredInput)
+    row.appendChild(registeredTd)
+
+    const tshirtTd = document.createElement('td')
+    const tshirtBtn = document.createElement('button')
+    tshirtBtn.type = 'button'
+    tshirtBtn.className = 'licence-tshirt-btn'
+    applyTshirtButtonStyle(tshirtBtn, licence.tshirt)
+    tshirtBtn.addEventListener('click', () => openTshirtModal(licence, tshirtBtn))
+    tshirtTd.appendChild(tshirtBtn)
+    row.appendChild(tshirtTd)
+
+    const gamesTd = document.createElement('td')
+    const gamesWrap = document.createElement('div')
+    gamesWrap.className = 'licence-game-dots'
+    licence.freeGames.forEach((used, i) => {
+      const dot = document.createElement('button')
+      dot.type = 'button'
+      dot.className = 'licence-game-dot' + (used ? ' used' : '')
+      dot.title = `Partie offerte ${i + 1}`
+      dot.addEventListener('click', () => {
+        licence.freeGames[i] = !licence.freeGames[i]
+        dot.classList.toggle('used', licence.freeGames[i])
+        saveState()
+      })
+      gamesWrap.appendChild(dot)
+    })
+    gamesTd.appendChild(gamesWrap)
+    row.appendChild(gamesTd)
+
+    const deleteTd = document.createElement('td')
+    const deleteBtn = document.createElement('button')
+    deleteBtn.className = 'licence-delete-btn'
+    deleteBtn.title = 'Supprimer cette ligne'
+    deleteBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18" /><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>'
+    deleteBtn.addEventListener('click', () => {
+      licences = licences.filter((l) => l !== licence)
+      renderLicencesTable()
+      saveState()
+    })
+    deleteTd.appendChild(deleteBtn)
+    row.appendChild(deleteTd)
+
+    licencesTbody.appendChild(row)
+  })
+}
+
+// Popup de choix du t-shirt (couleur + taille) ouverte depuis une ligne de la
+// table licences. editingLicence/editingTshirtBtn memorisent la ligne en
+// cours d'edition le temps que la popup soit ouverte.
+const tshirtModalBackdrop = document.getElementById('tshirt-modal-backdrop')
+const tshirtColorActions = document.getElementById('tshirt-color-actions')
+const tshirtSizeSelect = document.getElementById('tshirt-size-select')
+let editingTshirtLicence = null
+let editingTshirtBtn = null
+let selectedTshirtColor = null
+
+function openTshirtModal(licence, btn) {
+  editingTshirtLicence = licence
+  editingTshirtBtn = btn
+  selectedTshirtColor = licence.tshirt.color || null
+  tshirtColorActions.querySelectorAll('.tshirt-color-btn').forEach((b) => {
+    b.classList.toggle('selected', b.dataset.color === selectedTshirtColor)
+  })
+  tshirtSizeSelect.value = licence.tshirt.size || ''
+  tshirtModalBackdrop.classList.remove('hidden')
+}
+
+tshirtColorActions.querySelectorAll('.tshirt-color-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    selectedTshirtColor = btn.dataset.color
+    tshirtColorActions.querySelectorAll('.tshirt-color-btn').forEach((b) => b.classList.toggle('selected', b === btn))
+  })
+})
+
+document.getElementById('tshirt-validate-btn').addEventListener('click', () => {
+  if (!editingTshirtLicence) return
+  editingTshirtLicence.tshirt = { color: selectedTshirtColor, size: tshirtSizeSelect.value || null }
+  applyTshirtButtonStyle(editingTshirtBtn, editingTshirtLicence.tshirt)
+  tshirtModalBackdrop.classList.add('hidden')
+  editingTshirtLicence = null
+  editingTshirtBtn = null
+  saveState()
+})
+
+document.getElementById('tshirt-cancel-btn').addEventListener('click', () => {
+  tshirtModalBackdrop.classList.add('hidden')
+  editingTshirtLicence = null
+  editingTshirtBtn = null
+})
 
 const t12ToggleBtn = document.getElementById('t12-toggle-panel')
 t12ToggleBtn.addEventListener('click', () => {
@@ -2006,6 +2429,7 @@ function showTournamentView() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  licencesView.classList.add('hidden')
   tournamentView.classList.remove('hidden')
   // Le tableau vient peut-etre d'etre affiche apres avoir ete display:none :
   // les positions/connecteurs calcules pendant qu'il etait cache sont faux
