@@ -1,3 +1,11 @@
+// PWA : permet l'installation ("Ajouter a l'ecran d'accueil / au bureau")
+// et sert la coquille de l'app depuis le cache si le reseau est indisponible.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 const addBtn = document.getElementById('add-team-btn')
 const modalBackdrop = document.getElementById('team-modal-backdrop')
 const list = document.getElementById('team-list')
