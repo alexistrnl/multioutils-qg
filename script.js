@@ -821,6 +821,10 @@ function navigateTo(path, replace) {
 function renderRoute() {
   const path = location.pathname
 
+  // Filet de securite : si la popup "Mes tournois" etait restee ouverte
+  // (ex. navigation via le bouton precedent du navigateur), on la referme.
+  myTournamentsModalBackdrop.classList.add('hidden')
+
   const dartsMatch = path.match(/^\/tournoiflechettes(\d+)$/)
   if (dartsMatch) {
     const t = dartsTournaments.find((d) => tournamentNumber(d.id) === dartsMatch[1])
@@ -2487,7 +2491,10 @@ function renderTournamentMenu() {
     })
     li.appendChild(deleteBtn)
 
-    li.addEventListener('click', () => navigateTo(tournamentUrl(t.id)))
+    li.addEventListener('click', () => {
+      myTournamentsModalBackdrop.classList.add('hidden')
+      navigateTo(tournamentUrl(t.id))
+    })
     tournamentListPage.appendChild(li)
   })
 }
@@ -2611,7 +2618,18 @@ tournamentTypeCancelBtn.addEventListener('click', () => {
   tournamentTypeModalBackdrop.classList.add('hidden')
 })
 
-document.getElementById('new-tournament-page-btn').addEventListener('click', () => {
+const myTournamentsModalBackdrop = document.getElementById('my-tournaments-modal-backdrop')
+
+document.getElementById('my-tournaments-btn').addEventListener('click', () => {
+  myTournamentsModalBackdrop.classList.remove('hidden')
+})
+
+document.getElementById('my-tournaments-close-btn').addEventListener('click', () => {
+  myTournamentsModalBackdrop.classList.add('hidden')
+})
+
+document.getElementById('my-tournaments-new-btn').addEventListener('click', () => {
+  myTournamentsModalBackdrop.classList.add('hidden')
   openTournamentTypeModal()
 })
 

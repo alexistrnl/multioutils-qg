@@ -349,7 +349,8 @@ html, body {
   padding: 32px;
 }
 
-.home-darts h2 {
+.home-darts h2,
+.home-licences h2 {
   margin: 0 0 4px;
   font-size: 1.6rem;
   font-weight: 700;
@@ -948,11 +949,17 @@ body.panel-collapsed .right-overlay {
   background: #1a1a1a;
 }
 
+.my-tournaments-new-btn {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
 .tournament-list {
   list-style: none;
   margin: 0 0 20px;
   padding: 0;
-  min-width: 0;
+  min-width: 280px;
   max-height: 320px;
   overflow-y: auto;
 }

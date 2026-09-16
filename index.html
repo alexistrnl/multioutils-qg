@@ -22,8 +22,7 @@
       <span class="home-section-accent"></span>
       <h1>Tournois padel</h1>
       <p class="home-section-sub">Gérez tableaux et poules</p>
-      <ul id="tournament-list-page" class="tournament-list"></ul>
-      <button id="new-tournament-page-btn" class="draw-btn">+ Nouveau tournoi</button>
+      <button id="my-tournaments-btn" class="draw-btn">Mes tournois</button>
     </div>
 
     <div class="home-card home-darts">
@@ -49,6 +48,17 @@
     <div class="form-actions tournament-type-actions" id="tournament-type-list"></div>
     <div class="form-actions">
       <button id="tournament-type-cancel-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="my-tournaments-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal">
+    <h2>Mes tournois</h2>
+    <button id="my-tournaments-new-btn" class="draw-btn my-tournaments-new-btn">+ Nouveau tournoi</button>
+    <ul id="tournament-list-page" class="tournament-list"></ul>
+    <div class="form-actions">
+      <button id="my-tournaments-close-btn">Fermer</button>
     </div>
   </div>
 </div>
