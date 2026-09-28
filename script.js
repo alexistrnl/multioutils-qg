@@ -6,6 +6,155 @@ if ('serviceWorker' in navigator) {
   })
 }
 
+// Autocompletion des noms de joueurs (padel + flechettes) a partir du
+// repertoire du club (players-directory.js, charge avant ce script). Ne
+// contient volontairement que Nom/Prenom (donnees sensibles exclues).
+// Des 2 lettres tapees, une liste "Prenom Nom" s'affiche sous le champ ; un
+// clic (ou Entree) sur un joueur remplit d'un coup le prenom ET le nom.
+const AC_MIN_CHARS = 2
+const AC_MAX_RESULTS = 12
+
+function acNormalize(s) {
+  return (s || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
+function acDecode(s) {
+  const t = document.createElement('textarea')
+  t.innerHTML = s || ''
+  return t.value.replace(/&#0?39;?|&apos;?/g, "'")
+}
+
+const clubPlayers = (window.CLUB_PLAYERS || [])
+  .map((p) => {
+    const prenom = acDecode(p.prenom).trim()
+    const nom = acDecode(p.nom).trim()
+    const n = acNormalize(`${prenom} ${nom}`)
+    return { prenom, nom, label: `${prenom} ${nom}`.trim(), key: n, keyRev: acNormalize(`${nom} ${prenom}`) }
+  })
+  .filter((p) => p.label)
+  .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
+
+// Correspondance : chaque mot tape doit commencer un mot du prenom ou du nom
+// ("ma du" trouve "Martin Dupont"), sans tenir compte des accents/majuscules.
+function searchClubPlayers(query) {
+  const q = acNormalize(query)
+  if (q.length < AC_MIN_CHARS) return []
+  const terms = q.split(/\s+/)
+  const starts = []
+  const others = []
+  for (const p of clubPlayers) {
+    const words = p.key.split(/[\s\-']+/)
+    if (!terms.every((t) => words.some((w) => w.startsWith(t)))) continue
+    if (p.key.startsWith(q) || p.keyRev.startsWith(q)) starts.push(p)
+    else others.push(p)
+    if (starts.length >= AC_MAX_RESULTS) break
+  }
+  return starts.concat(others).slice(0, AC_MAX_RESULTS)
+}
+
+const acDropdown = document.createElement('ul')
+acDropdown.className = 'player-ac hidden'
+document.body.appendChild(acDropdown)
+let acState = null // { input, results, active, onPick }
+
+function acClose() {
+  acDropdown.classList.add('hidden')
+  acDropdown.innerHTML = ''
+  acState = null
+}
+
+function acPosition(input) {
+  const r = input.getBoundingClientRect()
+  acDropdown.style.left = `${r.left}px`
+  acDropdown.style.top = `${r.bottom + 2}px`
+  acDropdown.style.minWidth = `${Math.max(r.width, 220)}px`
+}
+
+function acHighlight(i) {
+  if (!acState) return
+  acState.active = i
+  ;[...acDropdown.children].forEach((li, j) => li.classList.toggle('active', j === i))
+  const li = acDropdown.children[i]
+  if (li) li.scrollIntoView({ block: 'nearest' })
+}
+
+function acPick(i) {
+  if (!acState || !acState.results[i]) return
+  const { onPick, results, input } = acState
+  acClose()
+  onPick(results[i], input)
+}
+
+function acOpen(input, onPick) {
+  const results = searchClubPlayers(input.value)
+  if (!results.length) return acClose()
+  acState = { input, results, active: -1, onPick }
+  acDropdown.innerHTML = ''
+  results.forEach((p, i) => {
+    const li = document.createElement('li')
+    const prenom = document.createElement('strong')
+    prenom.textContent = p.prenom
+    li.append(prenom, ` ${p.nom}`)
+    // mousedown (et pas click) : evite que le champ perde le focus avant le choix.
+    li.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      acPick(i)
+    })
+    li.addEventListener('mouseenter', () => acHighlight(i))
+    acDropdown.appendChild(li)
+  })
+  acPosition(input)
+  acDropdown.classList.remove('hidden')
+}
+
+function attachPlayerAutocomplete(input, onPick) {
+  input.setAttribute('autocomplete', 'off')
+  input.addEventListener('input', () => acOpen(input, onPick))
+  input.addEventListener('blur', () => {
+    if (acState && acState.input === input) acClose()
+  })
+  input.addEventListener('keydown', (e) => {
+    if (!acState || acState.input !== input) return
+    const n = acState.results.length
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      acHighlight((acState.active + 1) % n)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      acHighlight((acState.active - 1 + n) % n)
+    } else if (e.key === 'Enter' && acState.active >= 0) {
+      e.preventDefault()
+      acPick(acState.active)
+    } else if (e.key === 'Escape') {
+      e.stopPropagation()
+      acClose()
+    }
+  })
+}
+
+// Relie une paire de champs prenom/nom : taper dans l'un ou l'autre propose
+// les joueurs, le choix remplit les deux.
+function attachPlayerPairAutocomplete(prenomInput, nomInput) {
+  const fill = (p) => {
+    prenomInput.value = p.prenom
+    nomInput.value = p.nom
+    prenomInput.dispatchEvent(new Event('change', { bubbles: true }))
+    nomInput.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+  attachPlayerAutocomplete(prenomInput, fill)
+  attachPlayerAutocomplete(nomInput, fill)
+}
+
+window.addEventListener('resize', acClose)
+document.addEventListener('scroll', () => acState && acPosition(acState.input), true)
+
+attachPlayerPairAutocomplete(document.getElementById('j1-prenom'), document.getElementById('j1-nom'))
+attachPlayerPairAutocomplete(document.getElementById('j2-prenom'), document.getElementById('j2-nom'))
+
 const addBtn = document.getElementById('add-team-btn')
 const modalBackdrop = document.getElementById('team-modal-backdrop')
 const list = document.getElementById('team-list')
@@ -274,6 +423,7 @@ function detailsRow(label, player) {
     td.appendChild(input)
     tr.appendChild(td)
   })
+  attachPlayerPairAutocomplete(tr.querySelector('[data-field="prenom"]'), tr.querySelector('[data-field="nom"]'))
   return tr
 }
 
@@ -1890,6 +2040,10 @@ function renderDartsPlayersList() {
     const prenomInput = document.createElement('input')
     prenomInput.type = 'text'
     prenomInput.value = playerFullName(player)
+    attachPlayerAutocomplete(prenomInput, (p) => {
+      prenomInput.value = p.label
+      prenomInput.dispatchEvent(new Event('change'))
+    })
     prenomInput.addEventListener('change', () => {
       player.prenom = prenomInput.value.trim()
       player.nom = ''

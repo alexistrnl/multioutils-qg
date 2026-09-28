@@ -1794,3 +1794,40 @@ body.panel-collapsed .right-overlay {
     opacity: 1;
   }
 }
+
+/* Autocompletion joueurs (repertoire du club) */
+.player-ac {
+  position: fixed;
+  z-index: 100;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 280px;
+  overflow-y: auto;
+  background: #141414;
+  border: 1px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.9rem;
+  color: #ddd;
+}
+
+.player-ac.hidden {
+  display: none;
+}
+
+.player-ac li {
+  padding: 7px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.player-ac li.active {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.player-ac strong {
+  color: #fff;
+}
