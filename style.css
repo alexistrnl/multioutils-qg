@@ -988,6 +988,11 @@ body.panel-collapsed .right-overlay {
   color: gold;
 }
 
+.tournament-list-name.unnamed {
+  color: red;
+  font-style: italic;
+}
+
 .tournament-list-label {
   display: flex;
   align-items: center;
@@ -1074,6 +1079,37 @@ body.panel-collapsed .right-overlay {
 #t12-add-team-btn:hover,
 #t9-add-team-btn:hover {
   background: #1a1a1a;
+}
+
+.convocation-btn {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px;
+  background: transparent;
+  color: gold;
+  border: 1px solid red;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.convocation-btn:hover {
+  background: #1a1a1a;
+}
+
+.convocation-modal {
+  min-width: 340px;
+}
+
+.convocation-modal .convocation-row label {
+  flex: 1;
+}
+
+.convocation-modal .convocation-row small {
+  color: #999;
+}
+
+.convocation-modal .team-name-error {
+  margin-top: -6px;
 }
 
 .fill-random-btn {

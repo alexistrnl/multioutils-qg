@@ -48,6 +48,11 @@
 <div id="team-source-modal-backdrop" class="modal-backdrop hidden">
   <div class="modal team-source-modal">
     <h2 id="team-source-title">Nouveau tournoi</h2>
+    <div class="convocation-row team-name-row">
+      <label for="tournament-name-input">Nom du tournoi</label>
+      <input type="text" id="tournament-name-input" placeholder="ex : P250 Messieurs" autocomplete="off">
+    </div>
+    <p id="tournament-name-error" class="team-name-error hidden">Le nom du tournoi est obligatoire.</p>
     <p class="tournament-type-text">Comment remplir les équipes ?</p>
     <div id="team-source-dropzone" class="import-dropzone" role="button" tabindex="0">
       <span class="import-dropzone-title">Glissez votre fichier ici</span>
@@ -60,6 +65,42 @@
     <div id="team-source-messages" class="import-messages hidden"></div>
     <div class="form-actions">
       <button id="team-source-cancel-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div id="name-required-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal convocation-modal">
+    <h2>Nom du tournoi requis</h2>
+    <p class="tournament-type-text">Ce tournoi n'a pas de nom. Renseignez-le pour y accéder.</p>
+    <div class="convocation-row team-name-row">
+      <label for="name-required-input">Nom du tournoi</label>
+      <input type="text" id="name-required-input" placeholder="ex : P250 Messieurs" autocomplete="off">
+    </div>
+    <p id="name-required-error" class="team-name-error hidden">Le nom du tournoi est obligatoire.</p>
+    <div class="form-actions">
+      <button id="name-required-validate-btn">Valider</button>
+      <button id="name-required-cancel-btn">Retour à l'accueil</button>
+    </div>
+  </div>
+</div>
+
+<div id="convocation-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal convocation-modal">
+    <h2>Convocations</h2>
+    <p class="tournament-type-text">Heures reprises sur le PDF, dans l'ordre du gestionnaire des équipes.</p>
+    <div class="convocation-row">
+      <label for="convocation-ts">Convocation TS <small>(TS1 à TS8)</small></label>
+      <input type="time" id="convocation-ts">
+    </div>
+    <div class="convocation-row">
+      <label for="convocation-bas">Convocation bas de tableau <small>(9 à 16)</small></label>
+      <input type="time" id="convocation-bas">
+    </div>
+    <p id="convocation-error" class="team-name-error hidden"></p>
+    <div class="form-actions">
+      <button id="convocation-generate-btn">Générer le PDF</button>
+      <button id="convocation-cancel-btn">Annuler</button>
     </div>
   </div>
 </div>
@@ -443,6 +484,7 @@
 <div class="left-panel">
   <div id="team-count">0 équipe</div>
   <button id="add-team-btn">+ Ajouter une équipe</button>
+  <button id="convocation-btn" class="convocation-btn">Convocation (PDF)</button>
 
   <ul id="team-list"></ul>
 </div>
@@ -579,6 +621,7 @@
 
 <script src="/players-directory.js"></script>
 <script src="/fft-import.js"></script>
+<script src="/convocation-pdf.js"></script>
 <script src="/script.js"></script>
 </body>
 </html>

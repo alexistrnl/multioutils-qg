@@ -927,7 +927,9 @@ function generateFakeTeams(count) {
 }
 
 if (!loadState()) {
-  activeTournamentId = createTournament('Tournoi 1')
+  // Tournoi de demonstration du tout 1er lancement : sans nom, il sera
+  // demande a la 1ere ouverture (cf renderRoute).
+  activeTournamentId = createTournament('')
   getActiveTournament().teams.push(...generateFakeTeams(16))
   renderTeams()
 }
@@ -1025,7 +1027,51 @@ function navigateTo(path, replace) {
   renderRoute()
 }
 
+function hasTournamentName(t) {
+  return !!(t.name || '').trim()
+}
+
+const nameRequiredModalBackdrop = document.getElementById('name-required-modal-backdrop')
+const nameRequiredInput = document.getElementById('name-required-input')
+const nameRequiredError = document.getElementById('name-required-error')
+let nameRequiredTournament = null
+
+function openNameRequiredModal(t) {
+  nameRequiredTournament = t
+  nameRequiredInput.value = ''
+  setTeamNameError(nameRequiredInput, nameRequiredError, false)
+  nameRequiredModalBackdrop.classList.remove('hidden')
+  nameRequiredInput.focus()
+}
+
+function validateNameRequired() {
+  const name = nameRequiredInput.value.trim()
+  if (!name) {
+    setTeamNameError(nameRequiredInput, nameRequiredError, true)
+    return
+  }
+  nameRequiredTournament.name = name
+  nameRequiredTournament = null
+  nameRequiredModalBackdrop.classList.add('hidden')
+  saveState()
+  renderRoute()
+}
+
+document.getElementById('name-required-validate-btn').addEventListener('click', validateNameRequired)
+nameRequiredInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') validateNameRequired()
+})
+document.getElementById('name-required-cancel-btn').addEventListener('click', () => {
+  nameRequiredTournament = null
+  nameRequiredModalBackdrop.classList.add('hidden')
+  navigateTo('/accueil', true)
+})
+
 function renderRoute() {
+  // Changement de page (ex. bouton precedent) : la demande de nom ne
+  // concerne que le tournoi qu'on essayait d'ouvrir.
+  nameRequiredModalBackdrop.classList.add('hidden')
+
   const path = location.pathname
 
   // Filet de securite : si la popup "Mes tournois" etait restee ouverte
@@ -1046,6 +1092,13 @@ function renderRoute() {
     const id = `tournoi${match[1]}-${match[2]}`
     const t = tournaments.find((tour) => tour.id === id)
     if (t) {
+      // Pas de nom renseigne : on n'affiche pas le tournoi tant qu'il n'en a
+      // pas recu un (URL tapee directement, ancien tournoi sans nom...).
+      if (!hasTournamentName(t)) {
+        showHomePage()
+        openNameRequiredModal(t)
+        return
+      }
       if (t.format === DEFAULT_FORMAT) {
         switchTournament(id)
         showTournamentView()
@@ -2278,7 +2331,8 @@ function renderTournamentMenu() {
 
     const nameSpan = document.createElement('span')
     nameSpan.className = 'tournament-list-name'
-    nameSpan.textContent = t.name
+    nameSpan.textContent = hasTournamentName(t) ? t.name : 'Sans nom'
+    nameSpan.classList.toggle('unnamed', !hasTournamentName(t))
     label.appendChild(nameSpan)
 
     const countSpan = document.createElement('span')
@@ -2396,10 +2450,11 @@ function leaveActiveTournamentView() {
   else if (current.format === '9') current.boxes = snapshotT9Boxes()
 }
 
-function createTournamentOfFormat(format, teams) {
+function createTournamentOfFormat(format, teams, name) {
   leaveActiveTournamentView()
 
-  const name = `Tournoi ${(formatCounters[format] || 0) + 1}`
+  name = (name || '').trim()
+  if (!name) return
   const id = createTournament(name, format)
   activeTournamentId = id
   if (teams) getActiveTournament().teams.push(...teams)
@@ -2468,12 +2523,29 @@ function showImportMessages(title, items) {
   teamSourceMessages.classList.remove('hidden')
 }
 
+// Nom du tournoi : obligatoire avant la saisie manuelle comme avant l'import.
+const tournamentNameInput = document.getElementById('tournament-name-input')
+const tournamentNameError = document.getElementById('tournament-name-error')
+
+function requireTournamentName() {
+  const name = tournamentNameInput.value.trim()
+  setTeamNameError(tournamentNameInput, tournamentNameError, !name)
+  return name || null
+}
+
+tournamentNameInput.addEventListener('input', () => {
+  if (tournamentNameInput.value.trim()) setTeamNameError(tournamentNameInput, tournamentNameError, false)
+})
+
 function openTeamSourceModal(format) {
   teamSourceFormat = format
   teamSourceTitle.textContent = `Nouveau tournoi ${formatTeamCount(format)} équipes`
+  tournamentNameInput.value = ''
+  setTeamNameError(tournamentNameInput, tournamentNameError, false)
   teamSourceMessages.classList.add('hidden')
   teamSourceFile.value = ''
   teamSourceModalBackdrop.classList.remove('hidden')
+  tournamentNameInput.focus()
 }
 
 function closeTeamSourceModal() {
@@ -2481,27 +2553,34 @@ function closeTeamSourceModal() {
   teamSourceDropzone.classList.remove('dragover')
 }
 
-let xlsxLibPromise = null
-function loadXlsxLib() {
-  if (window.XLSX) return Promise.resolve(window.XLSX)
-  if (!xlsxLibPromise) {
-    xlsxLibPromise = new Promise((resolve, reject) => {
+// Librairies lourdes (SheetJS, jsPDF) chargees seulement quand on en a besoin.
+const scriptPromises = {}
+function loadScript(src) {
+  if (!scriptPromises[src]) {
+    scriptPromises[src] = new Promise((resolve, reject) => {
       const s = document.createElement('script')
-      s.src = '/vendor/xlsx.full.min.js'
-      s.onload = () => resolve(window.XLSX)
+      s.src = src
+      s.onload = resolve
       s.onerror = () => {
-        xlsxLibPromise = null
-        reject(new Error('xlsx'))
+        delete scriptPromises[src]
+        s.remove()
+        reject(new Error(src))
       }
       document.head.appendChild(s)
     })
   }
-  return xlsxLibPromise
+  return scriptPromises[src]
+}
+
+function loadXlsxLib() {
+  return loadScript('/vendor/xlsx.full.min.js').then(() => window.XLSX)
 }
 
 document.getElementById('team-source-manual-btn').addEventListener('click', () => {
+  const name = requireTournamentName()
+  if (!name) return
   closeTeamSourceModal()
-  createTournamentOfFormat(teamSourceFormat)
+  createTournamentOfFormat(teamSourceFormat, null, name)
 })
 
 document.getElementById('team-source-cancel-btn').addEventListener('click', closeTeamSourceModal)
@@ -2512,6 +2591,8 @@ async function importTeamsFile(file) {
     showImportMessages('Fichier non pris en charge', [`« ${file.name} » n'est pas un fichier Excel (.xlsx).`])
     return
   }
+  const name = requireTournamentName()
+  if (!name) return
   const format = teamSourceFormat
   const expected = formatTeamCount(format)
   teamSourceDropzone.classList.add('busy')
@@ -2532,7 +2613,7 @@ async function importTeamsFile(file) {
     }
 
     closeTeamSourceModal()
-    createTournamentOfFormat(format, result.teams)
+    createTournamentOfFormat(format, result.teams, name)
     const notes = [...result.warnings]
     if (result.waitingCount) {
       notes.push(`${result.waitingCount} paire${result.waitingCount > 1 ? 's' : ''} en liste d'attente (non intégrée${result.waitingCount > 1 ? 's' : ''} au tableau).`)
@@ -2547,13 +2628,14 @@ async function importTeamsFile(file) {
 }
 
 teamSourceDropzone.addEventListener('click', () => {
+  if (!requireTournamentName()) return
   teamSourceFile.value = ''
   teamSourceFile.click()
 })
 teamSourceDropzone.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault()
-    teamSourceFile.click()
+    if (requireTournamentName()) teamSourceFile.click()
   }
 })
 teamSourceFile.addEventListener('change', () => importTeamsFile(teamSourceFile.files[0]))
@@ -2574,6 +2656,121 @@ teamSourceModalBackdrop.addEventListener('drop', (e) => {
   teamSourceDropzone.classList.remove('dragover')
   if (!teamSourceDropzone.contains(e.target)) return
   importTeamsFile(e.dataTransfer.files[0])
+})
+
+// Convocations (tournoi 16 equipes) : 2 heures saisies (TS1-TS8 / 9-16),
+// memorisees sur le tournoi, puis PDF genere dans l'ordre exact du
+// gestionnaire des equipes (getRankedTeams), avec la somme des classements.
+const CONVOCATION_TS_COUNT = 8
+const convocationModalBackdrop = document.getElementById('convocation-modal-backdrop')
+const convocationTsInput = document.getElementById('convocation-ts')
+const convocationBasInput = document.getElementById('convocation-bas')
+const convocationError = document.getElementById('convocation-error')
+const convocationGenerateBtn = document.getElementById('convocation-generate-btn')
+
+function showConvocationError(message) {
+  convocationError.textContent = message
+  convocationError.classList.toggle('hidden', !message)
+}
+
+document.getElementById('convocation-btn').addEventListener('click', () => {
+  const active = getActiveTournament()
+  if (!active.teams.length) {
+    alert('Aucune équipe dans ce tournoi.')
+    return
+  }
+  const times = active.convocationTimes || {}
+  convocationTsInput.value = times.ts || ''
+  convocationBasInput.value = times.bas || ''
+  convocationBasInput.disabled = active.teams.length <= CONVOCATION_TS_COUNT
+  showConvocationError('')
+  convocationModalBackdrop.classList.remove('hidden')
+  convocationTsInput.focus()
+})
+
+document.getElementById('convocation-cancel-btn').addEventListener('click', () => {
+  convocationModalBackdrop.classList.add('hidden')
+})
+
+// Le logo d'origine fait 2000x2000 (~2,5 Mo) : on le reduit avant de
+// l'inserer, sinon le PDF pese plus de 15 Mo.
+function loadLogoForPdf(size = 240) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const scale = Math.min(1, size / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve({ dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height })
+    }
+    img.onerror = () => resolve(null)
+    img.src = '/logo.png'
+  })
+}
+
+function convocationRows(teams, startRank) {
+  return teams.map((team, i) => {
+    const rank = startRank + i
+    const sum = classementSum(team)
+    return {
+      rank: rank <= CONVOCATION_TS_COUNT ? `TS${rank}` : String(rank),
+      points: sum === UNRANKED ? 'NC' : String(Math.round(sum * 100) / 100),
+      j1: fullName(team.j1),
+      j2: fullName(team.j2),
+    }
+  })
+}
+
+convocationGenerateBtn.addEventListener('click', async () => {
+  const active = getActiveTournament()
+  const ranked = getRankedTeams()
+  const ts = convocationTsInput.value
+  const bas = convocationBasInput.value
+  const hasBottom = ranked.length > CONVOCATION_TS_COUNT
+
+  if (!ts) return showConvocationError('Saisissez l\'heure de convocation des têtes de série.')
+  if (hasBottom && !bas) return showConvocationError('Saisissez l\'heure de convocation du bas de tableau.')
+  showConvocationError('')
+
+  active.convocationTimes = { ts, bas }
+  saveState()
+
+  convocationGenerateBtn.disabled = true
+  try {
+    await loadScript('/vendor/jspdf.umd.min.js')
+    await loadScript('/vendor/jspdf.plugin.autotable.min.js')
+    const logo = await loadLogoForPdf()
+    const last = ranked.length
+    const doc = ConvocationPdf.buildConvocationPdf(window.jspdf.jsPDF, {
+      subtitle: `${active.name} — Le QG Padel Club`,
+      footer: `Le QG Padel Club — ${active.name}`,
+      date: new Date(),
+      logo,
+      sections: [
+        {
+          title: `Têtes de série (TS1 à TS${Math.min(CONVOCATION_TS_COUNT, last)})`,
+          time: ts,
+          accent: true,
+          rows: convocationRows(ranked.slice(0, CONVOCATION_TS_COUNT), 1),
+        },
+        {
+          title: `Bas de tableau (${CONVOCATION_TS_COUNT + 1} à ${last})`,
+          time: bas,
+          accent: false,
+          rows: convocationRows(ranked.slice(CONVOCATION_TS_COUNT), CONVOCATION_TS_COUNT + 1),
+        },
+      ],
+    })
+    const slug = acNormalize(active.name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    doc.save(`convocations-${slug || 'tournoi'}.pdf`)
+    convocationModalBackdrop.classList.add('hidden')
+  } catch (e) {
+    showConvocationError('Impossible de générer le PDF (vérifiez la connexion lors de la première génération).')
+  } finally {
+    convocationGenerateBtn.disabled = false
+  }
 })
 
 const myTournamentsModalBackdrop = document.getElementById('my-tournaments-modal-backdrop')
