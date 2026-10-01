@@ -52,6 +52,25 @@
   </div>
 </div>
 
+<div id="team-source-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal team-source-modal">
+    <h2 id="team-source-title">Nouveau tournoi</h2>
+    <p class="tournament-type-text">Comment remplir les équipes ?</p>
+    <div id="team-source-dropzone" class="import-dropzone" role="button" tabindex="0">
+      <span class="import-dropzone-title">Glissez votre fichier ici</span>
+      <small>ou cliquez pour le choisir — export FFT (.xlsx), onglet « Tableau final »</small>
+    </div>
+    <div class="form-actions tournament-type-actions">
+      <button id="team-source-manual-btn">Saisie manuelle<br><small>Ajouter les équipes une par une</small></button>
+    </div>
+    <input type="file" id="team-source-file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+    <div id="team-source-messages" class="import-messages hidden"></div>
+    <div class="form-actions">
+      <button id="team-source-cancel-btn">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div id="my-tournaments-modal-backdrop" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Mes tournois</h2>
@@ -543,6 +562,11 @@
 <div id="team-modal-backdrop" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Nouvelle équipe</h2>
+    <div class="convocation-row team-name-row">
+      <label for="team-name">Nom d'équipe</label>
+      <input type="text" id="team-name" placeholder="ex : Dupont / Martin" autocomplete="off">
+    </div>
+    <p id="team-name-error" class="team-name-error hidden">Le nom d'équipe est obligatoire.</p>
     <table class="team-table">
       <thead>
         <tr>
@@ -586,6 +610,11 @@
 <div id="team-details-backdrop" class="modal-backdrop hidden">
   <div class="modal">
     <h2>Équipe</h2>
+    <div class="convocation-row team-name-row">
+      <label for="details-team-name">Nom d'équipe</label>
+      <input type="text" id="details-team-name" placeholder="ex : Dupont / Martin" autocomplete="off">
+    </div>
+    <p id="details-team-name-error" class="team-name-error hidden">Le nom d'équipe est obligatoire.</p>
     <table class="team-table">
       <thead>
         <tr>
@@ -642,6 +671,7 @@
 
 
 <script src="/players-directory.js"></script>
+<script src="/fft-import.js"></script>
 <script src="/script.js"></script>
 </body>
 </html>

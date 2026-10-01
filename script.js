@@ -318,8 +318,16 @@ function classementSum(team) {
   return a === UNRANKED || b === UNRANKED ? UNRANKED : a + b
 }
 
+// Tournoi importe depuis l'export FFT : l'ordre officiel (Position de la
+// paire / Poids paire, cf fft-import.js) fait foi pour les tetes de serie tant
+// que toutes les equipes l'ont. Ajouter une equipe a la main ou modifier un
+// classement retire cet ordre et on retombe sur la somme des classements.
 function getRankedTeams() {
-  return [...getActiveTournament().teams].sort((a, b) => {
+  const teams = getActiveTournament().teams
+  if (teams.length && teams.every((t) => t.fft && t.fft.rank)) {
+    return [...teams].sort((a, b) => a.fft.rank - b.fft.rank)
+  }
+  return [...teams].sort((a, b) => {
     const sa = classementSum(a)
     const sb = classementSum(b)
     if (sa === sb) return 0
@@ -343,7 +351,7 @@ function renderTeams12() {
     const isRed = rank <= 4
     const label = isRed ? `TS${rank}` : `${rank}`
     const li = document.createElement('li')
-    li.textContent = `${label}. ${fullName(team.j1)} / ${fullName(team.j2)}`
+    li.textContent = `${label}. ${teamListLabel(team)}`
     li.classList.add('team-item', isRed ? 'rank-red' : 'rank-yellow')
     li.addEventListener('click', () => showTeamDetails(team))
     t12List.appendChild(li)
@@ -363,7 +371,7 @@ function renderTeams9() {
 
   active.teams.forEach((team, i) => {
     const li = document.createElement('li')
-    li.textContent = `${i + 1}. ${fullName(team.j1)} / ${fullName(team.j2)}`
+    li.textContent = `${i + 1}. ${teamListLabel(team)}`
     li.classList.add('team-item')
     li.addEventListener('click', () => showTeamDetails(team))
     t9List.appendChild(li)
@@ -394,7 +402,7 @@ function renderTeams() {
     const isRed = rank <= 8
     const label = isRed ? `TS${rank}` : `${rank}`
     const li = document.createElement('li')
-    li.textContent = `${label}. ${fullName(team.j1)} / ${fullName(team.j2)}`
+    li.textContent = `${label}. ${teamListLabel(team)}`
     li.classList.add('team-item', isRed ? 'rank-red' : 'rank-yellow')
     li.addEventListener('click', () => showTeamDetails(team))
     list.appendChild(li)
@@ -427,11 +435,54 @@ function detailsRow(label, player) {
   return tr
 }
 
+// Nom d'equipe : saisi a la main (obligatoire) pour les equipes ajoutees
+// manuellement, c'est lui qui s'affiche dans les cases du tableau. Les
+// equipes importees depuis l'export FFT n'en ont pas : leur nom reste genere
+// a partir des joueurs (sauf si on en saisit un dans leur fiche).
+function teamLabel(team) {
+  return (team.name || '').trim() || `${shortName(team.j1)} / ${shortName(team.j2)}`
+}
+
+function teamListLabel(team) {
+  return (team.name || '').trim() || `${fullName(team.j1)} / ${fullName(team.j2)}`
+}
+
+function teamNeedsName(team) {
+  return !team.fft && !(team.name || '').trim()
+}
+
+// Garde-fou avant tout tirage : on refuse de remplir le tableau tant qu'une
+// equipe saisie a la main n'a pas de nom.
+function ensureTeamNames() {
+  const missing = getActiveTournament().teams.filter(teamNeedsName)
+  if (!missing.length) return true
+  const lines = missing.map((t) => `- ${fullName(t.j1)} / ${fullName(t.j2)}`)
+  alert(
+    `Tirage impossible : ${missing.length} équipe${missing.length > 1 ? 's' : ''} sans nom d'équipe.\n` +
+      `Cliquez sur l'équipe dans la liste pour renseigner son nom.\n\n${lines.join('\n')}`
+  )
+  return false
+}
+
+function setTeamNameError(input, errorEl, show) {
+  input.classList.toggle('invalid', show)
+  errorEl.classList.toggle('hidden', !show)
+  if (show) input.focus()
+}
+
+const teamNameInput = document.getElementById('team-name')
+const teamNameError = document.getElementById('team-name-error')
+const detailsTeamNameInput = document.getElementById('details-team-name')
+const detailsTeamNameError = document.getElementById('details-team-name-error')
+
 function showTeamDetails(team) {
   editingTeam = team
   detailsTbody.innerHTML = ''
   detailsTbody.appendChild(detailsRow('Joueur 1', team.j1))
   detailsTbody.appendChild(detailsRow('Joueur 2', team.j2))
+  detailsTeamNameInput.value = team.name || ''
+  detailsTeamNameInput.placeholder = team.fft ? teamListLabel(team) : 'ex : Dupont / Martin'
+  setTeamNameError(detailsTeamNameInput, detailsTeamNameError, false)
   detailsConvocation.value = team.convocation || ''
   detailsBackdrop.classList.remove('hidden')
 }
@@ -445,14 +496,23 @@ document.getElementById('close-details-btn').addEventListener('click', closeDeta
 
 document.getElementById('save-team-btn').addEventListener('click', () => {
   if (!editingTeam) return
+  const name = detailsTeamNameInput.value.trim()
+  if (!name && !editingTeam.fft) {
+    setTeamNameError(detailsTeamNameInput, detailsTeamNameError, true)
+    return
+  }
+  editingTeam.name = name
+
   const rows = detailsTbody.querySelectorAll('tr')
   const players = [editingTeam.j1, editingTeam.j2]
+  const oldClassements = players.map((p) => p.classement)
 
   rows.forEach((row, i) => {
     row.querySelectorAll('input').forEach((input) => {
       players[i][input.dataset.field] = input.value.trim()
     })
   })
+  if (editingTeam.fft && players.some((p, i) => p.classement !== oldClassements[i])) delete editingTeam.fft.rank
   editingTeam.convocation = detailsConvocation.value
 
   renderTeams()
@@ -477,7 +537,15 @@ toggleBtn.addEventListener('click', () => {
 function closeModal() {
   modalBackdrop.classList.add('hidden')
   modalBackdrop.querySelectorAll('input').forEach((input) => (input.value = ''))
+  setTeamNameError(teamNameInput, teamNameError, false)
 }
+
+teamNameInput.addEventListener('input', () => {
+  if (teamNameInput.value.trim()) setTeamNameError(teamNameInput, teamNameError, false)
+})
+detailsTeamNameInput.addEventListener('input', () => {
+  if (detailsTeamNameInput.value.trim()) setTeamNameError(detailsTeamNameInput, detailsTeamNameError, false)
+})
 
 addBtn.addEventListener('click', () => {
   modalBackdrop.classList.remove('hidden')
@@ -499,10 +567,15 @@ document.getElementById('validate-team-btn').addEventListener('click', () => {
     classement: document.getElementById('j2-classement').value.trim(),
   }
   const convocation = document.getElementById('convocation').value
+  const name = teamNameInput.value.trim()
 
+  if (!name) {
+    setTeamNameError(teamNameInput, teamNameError, true)
+    return
+  }
   if (!j1.prenom || !j2.prenom) return
 
-  getActiveTournament().teams.push({ j1, j2, convocation })
+  getActiveTournament().teams.push({ name, j1, j2, convocation })
   renderTeams()
   closeModal()
 })
@@ -749,7 +822,7 @@ function popIn(box) {
 }
 
 function fillBoxWithTeam(box, team) {
-  box.textContent = `${shortName(team.j1)} / ${shortName(team.j2)}`
+  box.textContent = teamLabel(team)
   popIn(box)
   saveState()
 }
@@ -786,7 +859,7 @@ bracketColumns.addEventListener('click', (e) => {
 // TS5 a TS8, colonne 3 -> uniquement les 2 cases du milieu, choix entre TS3 et
 // TS4 (TS1/TS2 sont fixes, cf fillFixedSeeds ci-dessous).
 function tsLabel(rank, team) {
-  return `TS${rank} — ${shortName(team.j1)} / ${shortName(team.j2)}`
+  return `TS${rank} — ${teamLabel(team)}`
 }
 
 function showTsPicker(box, ranks) {
@@ -824,7 +897,7 @@ function fillFixedSeeds() {
     [allBoxes[6], ranked[0]],
   ].forEach(([box, team]) => {
     if (!box || !team) return
-    const text = `${shortName(team.j1)} / ${shortName(team.j2)}`
+    const text = teamLabel(team)
     if (box.textContent === text) return
     box.textContent = text
     popIn(box)
@@ -860,7 +933,9 @@ function generateFakeTeams(count) {
     })
     const hh = String(Math.floor(Math.random() * 4) + 9).padStart(2, '0')
     const mm = randomItem(['00', '15', '30', '45'])
-    teams.push({ j1: makePlayer(), j2: makePlayer(), convocation: `${hh}:${mm}` })
+    const j1 = makePlayer()
+    const j2 = makePlayer()
+    teams.push({ name: `${j1.nom} / ${j2.nom}`, j1, j2, convocation: `${hh}:${mm}` })
   }
   return teams
 }
@@ -1883,6 +1958,7 @@ document.getElementById('t9-score-validate-btn').addEventListener('click', () =>
 })
 
 document.getElementById('t9-draw-btn').addEventListener('click', () => {
+  if (!ensureTeamNames()) return
   const active = getActiveTournament()
   const draw = shuffleArray(active.teams)
 
@@ -1926,6 +2002,7 @@ function t12FillBoxes(names, teams) {
 }
 
 document.getElementById('t12-draw-round1-btn').addEventListener('click', () => {
+  if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
   const pool = ranked.filter((_, i) => i + 1 > 4)
   const draw = shuffleArray(pool).slice(0, 8)
@@ -1933,6 +2010,7 @@ document.getElementById('t12-draw-round1-btn').addEventListener('click', () => {
 })
 
 document.getElementById('t12-draw-round2-btn').addEventListener('click', () => {
+  if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
   const pool = ranked.filter((_, i) => i + 1 <= 4)
   const draw = shuffleArray(pool).slice(0, 4)
@@ -2744,12 +2822,13 @@ function leaveActiveTournamentView() {
   else if (current.format === '9') current.boxes = snapshotT9Boxes()
 }
 
-function createTournamentOfFormat(format) {
+function createTournamentOfFormat(format, teams) {
   leaveActiveTournamentView()
 
   const name = `Tournoi ${(formatCounters[format] || 0) + 1}`
   const id = createTournament(name, format)
   activeTournamentId = id
+  if (teams) getActiveTournament().teams.push(...teams)
 
   if (format === DEFAULT_FORMAT) {
     restoreBoxes({})
@@ -2772,7 +2851,7 @@ function openTournamentTypeModal() {
     btn.innerHTML = `${fmt.label}<br><small>${fmt.description}</small>`
     btn.addEventListener('click', () => {
       tournamentTypeModalBackdrop.classList.add('hidden')
-      createTournamentOfFormat(fmt.id)
+      openTeamSourceModal(fmt.id)
     })
     tournamentTypeList.appendChild(btn)
   })
@@ -2781,6 +2860,146 @@ function openTournamentTypeModal() {
 
 tournamentTypeCancelBtn.addEventListener('click', () => {
   tournamentTypeModalBackdrop.classList.add('hidden')
+})
+
+// Apres le choix du format (16, 12, 9 equipes...) : saisie manuelle (flux
+// existant) ou import de l'export xlsx FFT, par glisser-deposer ou clic sur
+// la zone. SheetJS (~1 Mo) n'est charge qu'au premier import ; le service
+// worker le met ensuite en cache comme le reste de l'app.
+const teamSourceModalBackdrop = document.getElementById('team-source-modal-backdrop')
+const teamSourceTitle = document.getElementById('team-source-title')
+const teamSourceFile = document.getElementById('team-source-file')
+const teamSourceMessages = document.getElementById('team-source-messages')
+const teamSourceDropzone = document.getElementById('team-source-dropzone')
+let teamSourceFormat = null
+
+function formatTeamCount(format) {
+  return parseInt(format, 10)
+}
+
+function showImportMessages(title, items) {
+  teamSourceMessages.innerHTML = ''
+  const strong = document.createElement('strong')
+  strong.textContent = title
+  teamSourceMessages.appendChild(strong)
+  if (items.length) {
+    const ul = document.createElement('ul')
+    items.forEach((text) => {
+      const li = document.createElement('li')
+      li.textContent = text
+      ul.appendChild(li)
+    })
+    teamSourceMessages.appendChild(ul)
+  }
+  teamSourceMessages.classList.remove('hidden')
+}
+
+function openTeamSourceModal(format) {
+  teamSourceFormat = format
+  teamSourceTitle.textContent = `Nouveau tournoi ${formatTeamCount(format)} équipes`
+  teamSourceMessages.classList.add('hidden')
+  teamSourceFile.value = ''
+  teamSourceModalBackdrop.classList.remove('hidden')
+}
+
+function closeTeamSourceModal() {
+  teamSourceModalBackdrop.classList.add('hidden')
+  teamSourceDropzone.classList.remove('dragover')
+}
+
+let xlsxLibPromise = null
+function loadXlsxLib() {
+  if (window.XLSX) return Promise.resolve(window.XLSX)
+  if (!xlsxLibPromise) {
+    xlsxLibPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script')
+      s.src = '/vendor/xlsx.full.min.js'
+      s.onload = () => resolve(window.XLSX)
+      s.onerror = () => {
+        xlsxLibPromise = null
+        reject(new Error('xlsx'))
+      }
+      document.head.appendChild(s)
+    })
+  }
+  return xlsxLibPromise
+}
+
+document.getElementById('team-source-manual-btn').addEventListener('click', () => {
+  closeTeamSourceModal()
+  createTournamentOfFormat(teamSourceFormat)
+})
+
+document.getElementById('team-source-cancel-btn').addEventListener('click', closeTeamSourceModal)
+
+async function importTeamsFile(file) {
+  if (!file || teamSourceDropzone.classList.contains('busy')) return
+  if (!/\.xlsx?$/i.test(file.name)) {
+    showImportMessages('Fichier non pris en charge', [`« ${file.name} » n'est pas un fichier Excel (.xlsx).`])
+    return
+  }
+  const format = teamSourceFormat
+  const expected = formatTeamCount(format)
+  teamSourceDropzone.classList.add('busy')
+  try {
+    const [XLSX, buffer] = await Promise.all([loadXlsxLib(), file.arrayBuffer()])
+    let workbook
+    try {
+      workbook = XLSX.read(buffer, { type: 'array' })
+    } catch (e) {
+      showImportMessages('Fichier illisible', [`« ${file.name} » n'est pas un fichier Excel valide.`])
+      return
+    }
+
+    const result = FftImport.parseFftWorkbook(XLSX, workbook, expected)
+    if (!result.ok) {
+      showImportMessages('Import impossible', [...result.errors, ...result.warnings])
+      return
+    }
+
+    closeTeamSourceModal()
+    createTournamentOfFormat(format, result.teams)
+    const notes = [...result.warnings]
+    if (result.waitingCount) {
+      notes.push(`${result.waitingCount} paire${result.waitingCount > 1 ? 's' : ''} en liste d'attente (non intégrée${result.waitingCount > 1 ? 's' : ''} au tableau).`)
+    }
+    if (notes.length) alert(`Import réussi : ${expected} équipes.\n\n${notes.join('\n')}`)
+  } catch (e) {
+    showImportMessages('Import impossible', ["Impossible de charger le lecteur Excel (vérifiez la connexion lors du premier import)."])
+  } finally {
+    teamSourceDropzone.classList.remove('busy')
+    teamSourceFile.value = ''
+  }
+}
+
+teamSourceDropzone.addEventListener('click', () => {
+  teamSourceFile.value = ''
+  teamSourceFile.click()
+})
+teamSourceDropzone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault()
+    teamSourceFile.click()
+  }
+})
+teamSourceFile.addEventListener('change', () => importTeamsFile(teamSourceFile.files[0]))
+
+// Glisser-deposer : on bloque le comportement par defaut sur toute la fenetre
+// (sinon un fichier lache a cote de la zone serait ouvert par le navigateur).
+;['dragenter', 'dragover'].forEach((type) => {
+  teamSourceModalBackdrop.addEventListener(type, (e) => {
+    e.preventDefault()
+    teamSourceDropzone.classList.toggle('dragover', teamSourceDropzone.contains(e.target))
+  })
+})
+teamSourceModalBackdrop.addEventListener('dragleave', (e) => {
+  if (!teamSourceModalBackdrop.contains(e.relatedTarget)) teamSourceDropzone.classList.remove('dragover')
+})
+teamSourceModalBackdrop.addEventListener('drop', (e) => {
+  e.preventDefault()
+  teamSourceDropzone.classList.remove('dragover')
+  if (!teamSourceDropzone.contains(e.target)) return
+  importTeamsFile(e.dataTransfer.files[0])
 })
 
 const myTournamentsModalBackdrop = document.getElementById('my-tournaments-modal-backdrop')
@@ -2838,7 +3057,7 @@ function animateFillBoxes(boxes, teams) {
     setTimeout(() => {
       const box = boxes[i]
       if (!box) return
-      boxTextTarget(box).textContent = `${shortName(team.j1)} / ${shortName(team.j2)}`
+      boxTextTarget(box).textContent = teamLabel(team)
       box.classList.remove('pop-in')
       void box.offsetWidth
       box.classList.add('pop-in')
@@ -2848,6 +3067,7 @@ function animateFillBoxes(boxes, teams) {
 }
 
 function drawRound1() {
+  if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
   const yellowPool = ranked.filter((_, i) => i + 1 > 8)
   const draw = shuffleArray(yellowPool).slice(0, 8)
@@ -2857,6 +3077,7 @@ function drawRound1() {
 }
 
 function drawRound2() {
+  if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
   const pool = ranked.filter((_, i) => {
     const rank = i + 1
@@ -2870,6 +3091,7 @@ function drawRound2() {
 }
 
 function drawRound3() {
+  if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
   const [ts1, ts2, ts3, ts4] = ranked
 

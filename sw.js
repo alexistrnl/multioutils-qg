@@ -1,5 +1,5 @@
-const CACHE_NAME = 'qg-padel-v2'
-const APP_SHELL = ['/index.html', '/style.css', '/script.js', '/logo.png', '/manifest.json', '/players-directory.js']
+const CACHE_NAME = 'qg-padel-v3'
+const APP_SHELL = ['/index.html', '/style.css', '/script.js', '/logo.png', '/manifest.json', '/players-directory.js', '/fft-import.js']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)))

@@ -1181,6 +1181,24 @@ body.panel-collapsed .right-overlay {
   padding: 5px;
 }
 
+.team-name-row input {
+  flex: 1;
+}
+
+.team-name-row input.invalid {
+  border-color: red;
+}
+
+.team-name-error {
+  margin: -10px 0 12px;
+  font-size: 0.8rem;
+  color: red;
+}
+
+.team-name-error.hidden {
+  display: none;
+}
+
 .form-actions {
   display: flex;
   gap: 8px;
@@ -1250,6 +1268,73 @@ body.panel-collapsed .right-overlay {
 
 .danger-btn {
   color: red;
+}
+
+.team-source-modal {
+  max-width: 460px;
+}
+
+.import-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 28px 16px;
+  border: 2px dashed red;
+  border-radius: 8px;
+  color: gold;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.import-dropzone small {
+  color: #ccc;
+  opacity: 0.8;
+}
+
+.import-dropzone-title {
+  font-weight: 600;
+}
+
+.import-dropzone:hover,
+.import-dropzone:focus-visible,
+.import-dropzone.dragover {
+  background: #1a1a1a;
+  border-color: gold;
+  outline: none;
+}
+
+.import-dropzone.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.import-messages {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid red;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #ccc;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.import-messages.hidden {
+  display: none;
+}
+
+.import-messages strong {
+  display: block;
+  color: red;
+  margin-bottom: 4px;
+}
+
+.import-messages ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
 }
 
 .darts-players-table-wrap {
