@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qg-padel-v3'
+const CACHE_NAME = 'qg-padel-v4'
 const APP_SHELL = ['/index.html', '/style.css', '/script.js', '/logo.png', '/manifest.json', '/players-directory.js', '/fft-import.js']
 
 self.addEventListener('install', (event) => {
@@ -15,7 +15,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Navigation (ouverture/rafraichissement d'une route type /accueil, /licences...) :
+// Navigation (ouverture/rafraichissement d'une route type /accueil, /tournoi16-1...) :
 // reseau d'abord, puis repli sur la coquille index.html mise en cache (le routeur
 // cote client de script.js prend le relais une fois charge). Autres requetes GET :
 // cache d'abord (affichage instantane), mise a jour en arriere-plan si le reseau repond.

@@ -1,7 +1,7 @@
 {
   "name": "QG Padel Club - Suite de gestion",
   "short_name": "QG Padel",
-  "description": "Gestion des tournois de padel, fléchettes et licences du QG Padel Club",
+  "description": "Gestion des tournois de padel et fléchettes du QG Padel Club",
   "start_url": "/accueil",
   "scope": "/",
   "display": "standalone",
