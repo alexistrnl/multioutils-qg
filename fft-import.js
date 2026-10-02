@@ -2,7 +2,8 @@
 // "Tableau final" + "Liste d'attente"). Tout se fait dans le navigateur :
 // le classeur est lu par SheetJS (vendor/xlsx.full.min.js, charge a la
 // demande par script.js) et seules les donnees utiles au tournoi sont
-// gardees (pas de mail/telephone/date de naissance).
+// gardees (telephone pour l'envoi des convocations ; pas de mail ni de
+// date de naissance).
 ;(function () {
   const FFT_DEFAULT_TEAMS = 16
   const FFT_MAIN_SHEET = 'Tableau final'
@@ -51,6 +52,14 @@
 
   function cell(v) {
     return v == null ? '' : String(v).trim()
+  }
+
+  // Excel peut stocker un 06... comme nombre (612345678) : le 0 initial est
+  // perdu, on le remet pour les numeros francais a 9 chiffres.
+  function phoneCell(v) {
+    const s = cell(v)
+    if (typeof v === 'number' && /^[1-9]\d{8}$/.test(s)) return '0' + s
+    return s
   }
 
   function num(v) {
@@ -112,11 +121,22 @@
     }
 
     const get = (r, name) => (has(name) ? r[table.colIndex[norm(name)]] : '')
+    // Colonne telephone : l'intitule varie selon les fichiers ("Téléphone joueur 1",
+    // "Numéro joueur 1", "Numéro de joueur 1", "Portable joueur 1"...). On
+    // ecarte tout ce qui parle de licence ("Numéro de licence joueur 1").
+    const phoneCol = (n) => {
+      const key = Object.keys(table.colIndex).find(
+        (k) => /(telephone|numero|portable|mobile|tel)/.test(k) && !/licence/.test(k) && new RegExp('joueur ?' + n + '$').test(k)
+      )
+      return key === undefined ? -1 : table.colIndex[key]
+    }
+    const phoneCols = { 1: phoneCol(1), 2: phoneCol(2) }
     const player = (r, n) => ({
       nom: cell(get(r, `Nom joueur ${n}`)),
       prenom: cell(get(r, `Prénom joueur ${n}`)),
       club: cell(get(r, `Club joueur ${n}`)),
       classement: cell(get(r, `Classement joueur ${n}`)),
+      telephone: phoneCols[n] === -1 ? '' : phoneCell(r[phoneCols[n]]),
     })
 
     const dataRows = table.rows

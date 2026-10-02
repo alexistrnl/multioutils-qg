@@ -43,40 +43,99 @@
 
     doc.setDrawColor(...RED)
     doc.setLineWidth(0.8)
-    doc.line(MARGIN, 32, pageWidth - MARGIN, 32)
-    return 40
+    doc.line(MARGIN, 30, pageWidth - MARGIN, 30)
+    return 37
   }
 
+  // Une paire = 2 lignes (une par joueur) : rang, classement de la paire et
+  // heure sont fusionnes sur les 2 lignes ; chaque joueur a son nom, son
+  // classement individuel (entre parentheses, en plus petit) et son club.
+  const PLAYER_FONT = 9.5
+  const PLAYER_CL_FONT = 7.5
+
   function drawSection(doc, y, section) {
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    // Titre + entete + au moins une paire doivent tenir ensemble sur la page.
+    if (y + 30 > pageHeight - 16) {
+      doc.addPage()
+      y = 20
+    }
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(12.5)
+    doc.setFontSize(12)
     doc.setTextColor(...BLACK)
     doc.text(section.title, MARGIN, y)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...RED)
-    doc.text(`Convocation : ${formatTime(section.time)}`, doc.internal.pageSize.getWidth() - MARGIN, y, { align: 'right' })
+    doc.text(`Convocation : ${formatTime(section.time)}`, pageWidth - MARGIN, y, { align: 'right' })
+
+    const time = formatTime(section.time)
+    const body = []
+    section.rows.forEach((r) => {
+      const [p1, p2] = r.players
+      body.push([
+        { content: r.rank, rowSpan: 2 },
+        { content: r.points, rowSpan: 2 },
+        { content: p1.name, player: p1 },
+        p1.club || '—',
+        { content: time, rowSpan: 2 },
+      ])
+      body.push([{ content: p2.name, player: p2 }, p2.club || '—'])
+    })
 
     doc.autoTable({
       startY: y + 3,
-      margin: { left: MARGIN, right: MARGIN },
-      head: [['Rang', 'Classement', 'Joueur 1', 'Joueur 2', 'Convocation']],
-      body: section.rows.map((r) => [r.rank, r.points, r.j1, r.j2, formatTime(section.time)]),
+      margin: { left: MARGIN, right: MARGIN, bottom: 16 },
+      head: [['Rang', 'Classement', 'Joueurs', 'Club', 'Convocation']],
+      body,
       theme: 'plain',
-      styles: { font: 'helvetica', fontSize: 10.5, cellPadding: { top: 3.2, bottom: 3.2, left: 3, right: 3 }, textColor: BLACK, valign: 'middle' },
-      headStyles: { fillColor: BLACK, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9.5 },
-      alternateRowStyles: { fillColor: ZEBRA },
+      rowPageBreak: 'avoid',
+      styles: { font: 'helvetica', fontSize: PLAYER_FONT, cellPadding: { top: 0.9, bottom: 0.9, left: 3, right: 3 }, textColor: BLACK, valign: 'middle', overflow: 'ellipsize' },
+      headStyles: { fillColor: BLACK, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5, cellPadding: { top: 1.8, bottom: 1.8, left: 1.5, right: 1.5 } },
       columnStyles: {
-        0: { cellWidth: 18, fontStyle: 'bold', textColor: section.accent ? RED : BLACK, halign: 'center' },
-        1: { cellWidth: 26, halign: 'center' },
-        2: { cellWidth: 55 },
-        3: { cellWidth: 55 },
-        4: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
+        0: { cellWidth: 14, fontStyle: 'bold', textColor: section.accent ? RED : BLACK, halign: 'center' },
+        1: { cellWidth: 22, halign: 'center' },
+        2: { cellWidth: 62 },
+        3: { cellWidth: 60, fontSize: 8, textColor: [60, 60, 60] },
+        4: { cellWidth: 24, halign: 'center', fontStyle: 'bold' },
       },
       didParseCell: (hook) => {
-        if (hook.section === 'head' && [0, 1, 4].includes(hook.column.index)) hook.cell.styles.halign = 'center'
+        if (hook.section === 'head') {
+          if ([0, 1, 4].includes(hook.column.index)) hook.cell.styles.halign = 'center'
+          else hook.cell.styles.cellPadding = { top: 1.8, bottom: 1.8, left: 3, right: 1.5 }
+          return
+        }
+        // Fond alterne par paire (et non par ligne).
+        if (Math.floor(hook.row.index / 2) % 2 === 1) hook.cell.styles.fillColor = ZEBRA
+      },
+      willDrawCell: (hook) => {
+        // Le nom du joueur est dessine a la main (didDrawCell) pour pouvoir
+        // ecrire le classement individuel dans une taille plus petite.
+        if (hook.section === 'body' && hook.cell.raw && hook.cell.raw.player) hook.cell.text = []
+      },
+      didDrawCell: (hook) => {
+        if (hook.section === 'body' && hook.cell.raw && hook.cell.raw.player) {
+          const p = hook.cell.raw.player
+          const x = hook.cell.x + hook.cell.padding('left')
+          const cy = hook.cell.y + hook.cell.height / 2
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(PLAYER_FONT)
+          doc.setTextColor(...BLACK)
+          doc.text(p.name, x, cy, { baseline: 'middle' })
+          const w = doc.getTextWidth(p.name)
+          doc.setFontSize(PLAYER_CL_FONT)
+          doc.setTextColor(...GREY_TEXT)
+          doc.text(`(${p.classement || 'NC'})`, x + w + 1.5, cy + 0.3, { baseline: 'middle' })
+        }
+        // Trait fin sous chaque paire pour bien separer les paires.
+        if (hook.section === 'body' && hook.row.index % 2 === 1 && hook.column.index === 2) {
+          doc.setDrawColor(220, 220, 220)
+          doc.setLineWidth(0.2)
+          doc.line(MARGIN, hook.cell.y + hook.cell.height, pageWidth - MARGIN, hook.cell.y + hook.cell.height)
+        }
       },
     })
-    return doc.lastAutoTable.finalY + 12
+    return doc.lastAutoTable.finalY + 8
   }
 
   function drawFooters(doc, data) {
@@ -94,7 +153,7 @@
   }
 
   // data = { subtitle, footer, date, logo?: { dataUrl, width, height },
-  //          sections: [{ title, time, accent, rows: [{ rank, points, j1, j2 }] }] }
+  //          sections: [{ title, time, accent, rows: [{ rank, points, players: [{ name, classement, club }, x2] }] }] }
   function buildConvocationPdf(jsPDF, data) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' })
     let y = drawHeader(doc, data)

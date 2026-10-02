@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qg-padel-v5'
+const CACHE_NAME = 'qg-padel-v16'
 const APP_SHELL = ['/index.html', '/style.css', '/script.js', '/logo.png', '/manifest.json', '/players-directory.js', '/fft-import.js', '/convocation-pdf.js']
 
 self.addEventListener('install', (event) => {
@@ -15,10 +15,19 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-// Navigation (ouverture/rafraichissement d'une route type /accueil, /tournoi16-1...) :
-// reseau d'abord, puis repli sur la coquille index.html mise en cache (le routeur
-// cote client de script.js prend le relais une fois charge). Autres requetes GET :
-// cache d'abord (affichage instantane), mise a jour en arriere-plan si le reseau repond.
+// Navigation et code de l'app (html/js/css/json) : reseau d'abord, repli sur
+// le cache hors connexion. Indispensable pour que la page et script.js
+// restent toujours de la meme version apres une mise a jour (avant, le JS
+// etait servi depuis le cache alors que la page etait neuve : boutons morts).
+// Librairies vendor/ et images : cache d'abord (lourdes, changent rarement).
+function putInCache(request, response) {
+  if (response && response.status === 200 && new URL(request.url).origin === self.location.origin) {
+    const clone = response.clone()
+    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+  }
+  return response
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
@@ -27,18 +36,19 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const url = new URL(event.request.url)
+  const cacheFirst = url.pathname.startsWith('/vendor/') || /\.(png|jpe?g|svg|ico|webp)$/i.test(url.pathname)
+
+  if (cacheFirst) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => cached || fetch(event.request).then((r) => putInCache(event.request, r)))
+    )
+    return
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          }
-          return response
-        })
-        .catch(() => cached)
-      return cached || networkFetch
-    })
+    fetch(event.request)
+      .then((r) => putInCache(event.request, r))
+      .catch(() => caches.match(event.request))
   )
 })

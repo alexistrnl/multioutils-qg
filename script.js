@@ -1,6 +1,16 @@
 // PWA : permet l'installation ("Ajouter a l'ecran d'accueil / au bureau")
 // et sert la coquille de l'app depuis le cache si le reseau est indisponible.
 if ('serviceWorker' in navigator) {
+  // Nouvelle version du service worker active : on recharge une fois pour que
+  // la page et le JS soient de la meme version (pas au 1er lancement, ou il
+  // n'y avait pas encore de service worker aux commandes).
+  const hadController = !!navigator.serviceWorker.controller
+  let reloading = false
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return
+    reloading = true
+    location.reload()
+  })
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {})
   })
@@ -408,7 +418,7 @@ function detailsRow(label, player) {
   const labelTd = document.createElement('td')
   labelTd.textContent = label
   tr.appendChild(labelTd)
-  ;['prenom', 'nom', 'club', 'classement'].forEach((field) => {
+  ;['prenom', 'nom', 'club', 'classement', 'telephone'].forEach((field) => {
     const td = document.createElement('td')
     const input = document.createElement('input')
     input.type = 'text'
@@ -545,12 +555,14 @@ document.getElementById('validate-team-btn').addEventListener('click', () => {
     prenom: document.getElementById('j1-prenom').value.trim(),
     club: document.getElementById('j1-club').value.trim(),
     classement: document.getElementById('j1-classement').value.trim(),
+    telephone: document.getElementById('j1-telephone').value.trim(),
   }
   const j2 = {
     nom: document.getElementById('j2-nom').value.trim(),
     prenom: document.getElementById('j2-prenom').value.trim(),
     club: document.getElementById('j2-club').value.trim(),
     classement: document.getElementById('j2-classement').value.trim(),
+    telephone: document.getElementById('j2-telephone').value.trim(),
   }
   const convocation = document.getElementById('convocation').value
   const name = teamNameInput.value.trim()
@@ -2658,13 +2670,22 @@ teamSourceModalBackdrop.addEventListener('drop', (e) => {
   importTeamsFile(e.dataTransfer.files[0])
 })
 
-// Convocations (tournoi 16 equipes) : 2 heures saisies (TS1-TS8 / 9-16),
-// memorisees sur le tournoi, puis PDF genere dans l'ordre exact du
-// gestionnaire des equipes (getRankedTeams), avec la somme des classements.
+// Convocations (tournoi 16 equipes) : 3 heures saisies (TS1-TS4 / TS5-TS8 /
+// paires 9 a 16), memorisees sur le tournoi, puis PDF genere dans l'ordre
+// exact du gestionnaire des equipes (getRankedTeams), avec la somme des
+// classements par paire, et classement individuel + club par joueur.
+const CONVOCATION_SLOTS = [
+  { key: 'ts14', from: 1, to: 4, accent: true, title: 'Têtes de série 1 à 4', missing: 'des TS 1 à 4' },
+  { key: 'ts58', from: 5, to: 8, accent: true, title: 'Têtes de série 5 à 8', missing: 'des TS 5 à 8' },
+  { key: 'rest', from: 9, to: Infinity, accent: false, title: null, missing: 'des paires suivantes' },
+]
 const CONVOCATION_TS_COUNT = 8
 const convocationModalBackdrop = document.getElementById('convocation-modal-backdrop')
-const convocationTsInput = document.getElementById('convocation-ts')
-const convocationBasInput = document.getElementById('convocation-bas')
+const convocationInputs = {
+  ts14: document.getElementById('convocation-ts14'),
+  ts58: document.getElementById('convocation-ts58'),
+  rest: document.getElementById('convocation-rest'),
+}
 const convocationError = document.getElementById('convocation-error')
 const convocationGenerateBtn = document.getElementById('convocation-generate-btn')
 
@@ -2673,19 +2694,30 @@ function showConvocationError(message) {
   convocationError.classList.toggle('hidden', !message)
 }
 
+// Anciennes sauvegardes : 2 heures { ts, bas } -> 3 creneaux.
+function getConvocationTimes(t) {
+  const c = t.convocationTimes || {}
+  if ('ts' in c || 'bas' in c) return { ts14: c.ts || '', ts58: c.ts || '', rest: c.bas || '' }
+  return { ts14: c.ts14 || '', ts58: c.ts58 || '', rest: c.rest || '' }
+}
+
 document.getElementById('convocation-btn').addEventListener('click', () => {
   const active = getActiveTournament()
-  if (!active.teams.length) {
+  if (!active) return
+  const n = active.teams.length
+  if (!n) {
     alert('Aucune équipe dans ce tournoi.')
     return
   }
-  const times = active.convocationTimes || {}
-  convocationTsInput.value = times.ts || ''
-  convocationBasInput.value = times.bas || ''
-  convocationBasInput.disabled = active.teams.length <= CONVOCATION_TS_COUNT
+  const times = getConvocationTimes(active)
+  CONVOCATION_SLOTS.forEach((slot) => {
+    const input = convocationInputs[slot.key]
+    input.value = times[slot.key]
+    input.disabled = n < slot.from
+  })
   showConvocationError('')
   convocationModalBackdrop.classList.remove('hidden')
-  convocationTsInput.focus()
+  convocationInputs.ts14.focus()
 })
 
 document.getElementById('convocation-cancel-btn').addEventListener('click', () => {
@@ -2710,6 +2742,10 @@ function loadLogoForPdf(size = 240) {
   })
 }
 
+function convocationPlayer(p) {
+  return { name: fullName(p), classement: (p.classement || '').trim(), club: (p.club || '').trim() }
+}
+
 function convocationRows(teams, startRank) {
   return teams.map((team, i) => {
     const rank = startRank + i
@@ -2717,60 +2753,174 @@ function convocationRows(teams, startRank) {
     return {
       rank: rank <= CONVOCATION_TS_COUNT ? `TS${rank}` : String(rank),
       points: sum === UNRANKED ? 'NC' : String(Math.round(sum * 100) / 100),
-      j1: fullName(team.j1),
-      j2: fullName(team.j2),
+      players: [convocationPlayer(team.j1), convocationPlayer(team.j2)],
     }
   })
+}
+
+// PDF des convocations du tournoi (heures deja saisies). Partage entre le
+// bouton "Convocation (PDF)" (telechargement) et "Envoyer convocation" (partage).
+async function buildTournamentConvocationPdf(active) {
+  await loadScript('/vendor/jspdf.umd.min.js')
+  await loadScript('/vendor/jspdf.plugin.autotable.min.js')
+  const ranked = getRankedTeams()
+  const last = ranked.length
+  const times = getConvocationTimes(active)
+  const logo = await loadLogoForPdf()
+  const sections = CONVOCATION_SLOTS.map((slot) => {
+    const to = Math.min(slot.to, last)
+    return {
+      title: slot.title || `Paires ${slot.from} à ${to}`,
+      time: times[slot.key],
+      accent: slot.accent,
+      rows: convocationRows(ranked.slice(slot.from - 1, to), slot.from),
+    }
+  })
+  const doc = ConvocationPdf.buildConvocationPdf(window.jspdf.jsPDF, {
+    subtitle: `${active.name} — Le QG Padel Club`,
+    footer: `Le QG Padel Club — ${active.name}`,
+    date: new Date(),
+    logo,
+    sections,
+  })
+  const slug = acNormalize(active.name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  return { doc, filename: `convocations-${slug || 'tournoi'}.pdf` }
 }
 
 convocationGenerateBtn.addEventListener('click', async () => {
   const active = getActiveTournament()
   const ranked = getRankedTeams()
-  const ts = convocationTsInput.value
-  const bas = convocationBasInput.value
-  const hasBottom = ranked.length > CONVOCATION_TS_COUNT
-
-  if (!ts) return showConvocationError('Saisissez l\'heure de convocation des têtes de série.')
-  if (hasBottom && !bas) return showConvocationError('Saisissez l\'heure de convocation du bas de tableau.')
+  const last = ranked.length
+  const times = {}
+  for (const slot of CONVOCATION_SLOTS) {
+    times[slot.key] = convocationInputs[slot.key].value
+    if (last >= slot.from && !times[slot.key]) {
+      showConvocationError(`Saisissez l'heure de convocation ${slot.missing}.`)
+      convocationInputs[slot.key].focus()
+      return
+    }
+  }
   showConvocationError('')
 
-  active.convocationTimes = { ts, bas }
+  active.convocationTimes = times
   saveState()
 
   convocationGenerateBtn.disabled = true
   try {
-    await loadScript('/vendor/jspdf.umd.min.js')
-    await loadScript('/vendor/jspdf.plugin.autotable.min.js')
-    const logo = await loadLogoForPdf()
-    const last = ranked.length
-    const doc = ConvocationPdf.buildConvocationPdf(window.jspdf.jsPDF, {
-      subtitle: `${active.name} — Le QG Padel Club`,
-      footer: `Le QG Padel Club — ${active.name}`,
-      date: new Date(),
-      logo,
-      sections: [
-        {
-          title: `Têtes de série (TS1 à TS${Math.min(CONVOCATION_TS_COUNT, last)})`,
-          time: ts,
-          accent: true,
-          rows: convocationRows(ranked.slice(0, CONVOCATION_TS_COUNT), 1),
-        },
-        {
-          title: `Bas de tableau (${CONVOCATION_TS_COUNT + 1} à ${last})`,
-          time: bas,
-          accent: false,
-          rows: convocationRows(ranked.slice(CONVOCATION_TS_COUNT), CONVOCATION_TS_COUNT + 1),
-        },
-      ],
-    })
-    const slug = acNormalize(active.name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    doc.save(`convocations-${slug || 'tournoi'}.pdf`)
+    const { doc, filename } = await buildTournamentConvocationPdf(active)
+    doc.save(filename)
     convocationModalBackdrop.classList.add('hidden')
   } catch (e) {
     showConvocationError('Impossible de générer le PDF (vérifiez la connexion lors de la première génération).')
   } finally {
     convocationGenerateBtn.disabled = false
   }
+})
+
+// Numeros des joueurs : liste simple de tous les numeros du tournoi (repris
+// de l'import ou de la fiche equipe), un bouton "Copier" par numero. Un
+// numero copie passe en vert ; l'etat est garde tant que la page n'est pas
+// rechargee, pour suivre ou on en est meme apres avoir ferme la fenetre.
+const sendModalBackdrop = document.getElementById('send-modal-backdrop')
+const sendSummary = document.getElementById('send-summary')
+const sendPhoneList = document.getElementById('send-phone-list')
+const copiedPhonesByTournament = {}
+
+// Tous les numeros renseignes, dans l'ordre du tableau, sans doublon. Un 6/7
+// a 9 chiffres (0 initial perdu par Excel) recupere son 0.
+function collectPhones() {
+  const seen = new Set()
+  const phones = []
+  getRankedTeams().forEach((team) => {
+    ;[team.j1, team.j2].forEach((p) => {
+      let phone = String(p.telephone || '').trim()
+      if (/^[67]\d{8}$/.test(phone)) phone = '0' + phone
+      const key = phone.replace(/[^\d+]/g, '')
+      if (!key || seen.has(key)) return
+      seen.add(key)
+      phones.push({ display: phone, value: key })
+    })
+  })
+  return phones
+}
+
+// navigator.clipboard n'existe qu'en https/localhost : sur le telephone
+// (http://IP-du-PC:5500) on passe par une zone de texte temporaire.
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch (e) {
+    const ta = document.createElement('textarea')
+    ta.value = text
+    ta.setAttribute('readonly', '')
+    ta.style.position = 'fixed'
+    ta.style.opacity = '0'
+    document.body.appendChild(ta)
+    ta.select()
+    ta.setSelectionRange(0, text.length)
+    let ok = false
+    try {
+      ok = document.execCommand('copy')
+    } catch (err) {
+      ok = false
+    }
+    ta.remove()
+    if (!ok) window.prompt('Copiez le numéro :', text)
+    return ok
+  }
+}
+
+document.getElementById('send-convocation-btn').addEventListener('click', () => {
+  const active = getActiveTournament()
+  if (!active) return
+  const copied = (copiedPhonesByTournament[active.id] = copiedPhonesByTournament[active.id] || new Set())
+  const phones = collectPhones()
+  // Compteur : numeros differents deja copies (recopier le meme ne compte pas 2 fois).
+  const renderSummary = () => {
+    if (!phones.length) {
+      sendSummary.textContent = "Aucun numéro dans ce tournoi (ils sont repris de la colonne « Numéro joueur 1 / 2 » du fichier importé)."
+      return
+    }
+    const done = phones.filter((p) => copied.has(p.value)).length
+    sendSummary.innerHTML = ''
+    const total = document.createElement('span')
+    total.textContent = `${phones.length} numéro${phones.length > 1 ? 's' : ''}`
+    const count = document.createElement('span')
+    count.className = 'send-copied-count' + (done === phones.length ? ' complete' : '')
+    count.textContent = `${done} / ${phones.length} copié${done > 1 ? 's' : ''}`
+    sendSummary.append(total, count)
+  }
+  renderSummary()
+  sendPhoneList.innerHTML = ''
+  phones.forEach((phone) => {
+    const li = document.createElement('li')
+    const num = document.createElement('span')
+    num.className = 'send-phone-number'
+    num.textContent = phone.display
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'send-phone-copy'
+    const markCopied = () => {
+      li.classList.add('copied')
+      btn.textContent = 'Copié'
+    }
+    btn.textContent = 'Copier'
+    if (copied.has(phone.value)) markCopied()
+    btn.addEventListener('click', async () => {
+      if (!(await copyText(phone.value))) return
+      copied.add(phone.value)
+      markCopied()
+      renderSummary()
+    })
+    li.append(num, btn)
+    sendPhoneList.appendChild(li)
+  })
+  sendModalBackdrop.classList.remove('hidden')
+})
+
+document.getElementById('send-close-btn').addEventListener('click', () => {
+  sendModalBackdrop.classList.add('hidden')
 })
 
 const myTournamentsModalBackdrop = document.getElementById('my-tournaments-modal-backdrop')

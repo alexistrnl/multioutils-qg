@@ -85,17 +85,32 @@
   </div>
 </div>
 
+<div id="send-modal-backdrop" class="modal-backdrop hidden">
+  <div class="modal send-modal">
+    <h2>Numéros des joueurs</h2>
+    <p id="send-summary" class="tournament-type-text"></p>
+    <ul id="send-phone-list" class="send-phone-list"></ul>
+    <div class="form-actions">
+      <button id="send-close-btn">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <div id="convocation-modal-backdrop" class="modal-backdrop hidden">
   <div class="modal convocation-modal">
     <h2>Convocations</h2>
     <p class="tournament-type-text">Heures reprises sur le PDF, dans l'ordre du gestionnaire des équipes.</p>
     <div class="convocation-row">
-      <label for="convocation-ts">Convocation TS <small>(TS1 à TS8)</small></label>
-      <input type="time" id="convocation-ts">
+      <label for="convocation-ts14">Convocation TS 1 à 4</label>
+      <input type="time" id="convocation-ts14">
     </div>
     <div class="convocation-row">
-      <label for="convocation-bas">Convocation bas de tableau <small>(9 à 16)</small></label>
-      <input type="time" id="convocation-bas">
+      <label for="convocation-ts58">Convocation TS 5 à 8</label>
+      <input type="time" id="convocation-ts58">
+    </div>
+    <div class="convocation-row">
+      <label for="convocation-rest">Convocation paires 9 à 16</label>
+      <input type="time" id="convocation-rest">
     </div>
     <p id="convocation-error" class="team-name-error hidden"></p>
     <div class="form-actions">
@@ -485,6 +500,7 @@
   <div id="team-count">0 équipe</div>
   <button id="add-team-btn">+ Ajouter une équipe</button>
   <button id="convocation-btn" class="convocation-btn">Convocation (PDF)</button>
+  <button id="send-convocation-btn" class="convocation-btn">Envoyer convocation</button>
 
   <ul id="team-list"></ul>
 </div>
@@ -524,6 +540,7 @@
           <th>Nom (facultatif)</th>
           <th>Club (facultatif)</th>
           <th>Classement (facultatif)</th>
+          <th>Téléphone (facultatif)</th>
         </tr>
       </thead>
       <tbody>
@@ -533,6 +550,7 @@
           <td><input type="text" id="j1-nom"></td>
           <td><input type="text" id="j1-club"></td>
           <td><input type="text" id="j1-classement"></td>
+          <td><input type="tel" id="j1-telephone"></td>
         </tr>
         <tr>
           <td>Joueur 2</td>
@@ -540,6 +558,7 @@
           <td><input type="text" id="j2-nom"></td>
           <td><input type="text" id="j2-club"></td>
           <td><input type="text" id="j2-classement"></td>
+          <td><input type="tel" id="j2-telephone"></td>
         </tr>
       </tbody>
     </table>
@@ -572,6 +591,7 @@
           <th>Nom (facultatif)</th>
           <th>Club (facultatif)</th>
           <th>Classement (facultatif)</th>
+          <th>Téléphone (facultatif)</th>
         </tr>
       </thead>
       <tbody id="details-tbody"></tbody>
