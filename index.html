@@ -31,6 +31,13 @@
       <p class="home-section-sub">Format poule / finale petite finale</p>
       <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
     </div>
+
+    <div class="home-card home-inventory">
+      <span class="home-section-accent"></span>
+      <h2>Inventaire textile</h2>
+      <p class="home-section-sub">Suivi du stock textile du club</p>
+      <button id="inventory-open-btn" class="draw-btn">Ouvrir l'inventaire</button>
+    </div>
   </div>
 </div>
 
@@ -376,6 +383,20 @@
   </div>
 </div>
 
+<div id="inventory-view" class="page hidden">
+  <div class="inv-header">
+    <span class="home-section-accent"></span>
+    <h1>Inventaire textile</h1>
+  </div>
+  <div id="inventory-content" class="inv-content"></div>
+  <button id="inventory-home-btn" class="home-icon-btn" title="Accueil">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+</div>
+
 <div id="darts-view" class="page hidden">
   <button id="darts-home-btn" class="home-icon-btn" title="Mes tournois">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -642,6 +663,7 @@
 <script src="/players-directory.js"></script>
 <script src="/fft-import.js"></script>
 <script src="/convocation-pdf.js"></script>
+<script src="/inventory.js"></script>
 <script src="/script.js"></script>
 </body>
 </html>

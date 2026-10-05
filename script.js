@@ -1008,6 +1008,7 @@ const dartsResultsPanel = document.getElementById('darts-results-panel')
 const dartsResultsToggleBtn = document.getElementById('darts-results-toggle-btn')
 const tournament12View = document.getElementById('tournament12-view')
 const tournament9View = document.getElementById('tournament9-view')
+const inventoryView = document.getElementById('inventory-view')
 
 dartsResultsToggleBtn.addEventListener('click', () => {
   const collapsed = dartsResultsPanel.classList.toggle('collapsed')
@@ -1090,6 +1091,15 @@ function renderRoute() {
   // (ex. navigation via le bouton precedent du navigateur), on la referme.
   myTournamentsModalBackdrop.classList.add('hidden')
 
+  // Les autres vues ne connaissent pas l'inventaire : on le masque ici, a
+  // chaque changement de route, et on ne le reaffiche que sur /inventaire.
+  inventoryView.classList.add('hidden')
+  document.documentElement.classList.remove('inventory-open')
+  if (path === '/inventaire') {
+    showInventoryView()
+    return
+  }
+
   const dartsMatch = path.match(/^\/tournoiflechettes(\d+)$/)
   if (dartsMatch) {
     const t = dartsTournaments.find((d) => tournamentNumber(d.id) === dartsMatch[1])
@@ -1146,6 +1156,17 @@ function showHomePage() {
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
   homePage.classList.remove('hidden')
+}
+
+function showInventoryView() {
+  homePage.classList.add('hidden')
+  tournamentView.classList.add('hidden')
+  dartsView.classList.add('hidden')
+  tournament12View.classList.add('hidden')
+  tournament9View.classList.add('hidden')
+  inventoryView.classList.remove('hidden')
+  document.documentElement.classList.add('inventory-open')
+  renderInventory()
 }
 
 let activeDartsTournament = null
@@ -1330,6 +1351,8 @@ dartsLaunchBtn.addEventListener('click', () => {
 })
 
 document.getElementById('darts-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('inventory-open-btn').addEventListener('click', () => navigateTo('/inventaire'))
+document.getElementById('inventory-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 
