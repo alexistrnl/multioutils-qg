@@ -1009,6 +1009,7 @@ const dartsResultsToggleBtn = document.getElementById('darts-results-toggle-btn'
 const tournament12View = document.getElementById('tournament12-view')
 const tournament9View = document.getElementById('tournament9-view')
 const inventoryView = document.getElementById('inventory-view')
+const planningView = document.getElementById('planning-view')
 
 dartsResultsToggleBtn.addEventListener('click', () => {
   const collapsed = dartsResultsPanel.classList.toggle('collapsed')
@@ -1099,6 +1100,11 @@ function renderRoute() {
     showInventoryView()
     return
   }
+  planningView.classList.add('hidden')
+  if (path === '/planning') {
+    showPlanningView()
+    return
+  }
 
   const dartsMatch = path.match(/^\/tournoiflechettes(\d+)$/)
   if (dartsMatch) {
@@ -1167,6 +1173,17 @@ function showInventoryView() {
   inventoryView.classList.remove('hidden')
   document.documentElement.classList.add('inventory-open')
   renderInventory()
+}
+
+function showPlanningView() {
+  homePage.classList.add('hidden')
+  tournamentView.classList.add('hidden')
+  dartsView.classList.add('hidden')
+  tournament12View.classList.add('hidden')
+  tournament9View.classList.add('hidden')
+  inventoryView.classList.add('hidden')
+  planningView.classList.remove('hidden')
+  renderPlanning()
 }
 
 let activeDartsTournament = null
@@ -1353,6 +1370,8 @@ dartsLaunchBtn.addEventListener('click', () => {
 document.getElementById('darts-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('inventory-open-btn').addEventListener('click', () => navigateTo('/inventaire'))
 document.getElementById('inventory-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('planning-open-btn').addEventListener('click', () => navigateTo('/planning'))
+document.getElementById('planning-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 

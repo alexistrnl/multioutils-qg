@@ -38,6 +38,13 @@
       <p class="home-section-sub">Suivi du stock textile du club</p>
       <button id="inventory-open-btn" class="draw-btn">Ouvrir l'inventaire</button>
     </div>
+
+    <div class="home-card home-planning">
+      <span class="home-section-accent"></span>
+      <h2>Planning terrains</h2>
+      <p class="home-section-sub">Créneaux libres du jour, message WhatsApp en un clic</p>
+      <button id="planning-open-btn" class="draw-btn">Ouvrir le planning</button>
+    </div>
   </div>
 </div>
 
@@ -397,6 +404,42 @@
   </button>
 </div>
 
+<div id="planning-view" class="page hidden">
+  <div class="planning-topbar">
+    <div class="planning-title">
+      <span class="home-section-accent"></span>
+      <h1>Planning terrains</h1>
+    </div>
+    <div class="planning-day">
+      <button id="planning-prev-btn" class="planning-nav-btn" title="Jour précédent">‹</button>
+      <div class="planning-day-center">
+        <span id="planning-date" class="planning-date"></span>
+        <button id="planning-today-btn" class="planning-today-btn hidden">Revenir à aujourd'hui</button>
+      </div>
+      <button id="planning-next-btn" class="planning-nav-btn" title="Jour suivant">›</button>
+    </div>
+    <button id="planning-home-btn" class="planning-home-btn" title="Accueil">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11l9-8 9 8" />
+        <path d="M5 10v10h14V10" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="planning-main">
+    <section class="planning-panel planning-left">
+      <p class="planning-help">Cliquez sur les créneaux réservés sur Gestion Sports.</p>
+      <div id="planning-grid" class="planning-grid"></div>
+    </section>
+
+    <section class="planning-panel planning-right">
+      <h2>Message</h2>
+      <pre id="planning-message" class="planning-message"></pre>
+      <button id="planning-copy-btn" class="planning-copy-btn">Copier le message</button>
+    </section>
+  </div>
+</div>
+
 <div id="darts-view" class="page hidden">
   <button id="darts-home-btn" class="home-icon-btn" title="Mes tournois">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -664,6 +707,7 @@
 <script src="/fft-import.js"></script>
 <script src="/convocation-pdf.js"></script>
 <script src="/inventory.js"></script>
+<script src="/planning.js"></script>
 <script src="/script.js"></script>
 </body>
 </html>
