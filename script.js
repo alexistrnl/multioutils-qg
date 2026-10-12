@@ -1105,6 +1105,11 @@ function renderRoute() {
     showPlanningView()
     return
   }
+  convView.classList.add('hidden')
+  if (path === '/convocation') {
+    showConvocationView()
+    return
+  }
 
   const dartsMatch = path.match(/^\/tournoiflechettes(\d+)$/)
   if (dartsMatch) {
@@ -1372,6 +1377,8 @@ document.getElementById('inventory-open-btn').addEventListener('click', () => na
 document.getElementById('inventory-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('planning-open-btn').addEventListener('click', () => navigateTo('/planning'))
 document.getElementById('planning-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('convocation-open-btn').addEventListener('click', () => navigateTo('/convocation'))
+document.getElementById('conv-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 

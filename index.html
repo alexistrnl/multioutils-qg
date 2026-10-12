@@ -32,6 +32,13 @@
       <button id="darts-launch-btn" class="draw-btn">Lancer le tournoi</button>
     </div>
 
+    <div class="home-card home-convocation">
+      <span class="home-section-accent"></span>
+      <h2>Convocation</h2>
+      <p class="home-section-sub">Heures de convocation par équipe, PDF prêt à envoyer</p>
+      <button id="convocation-open-btn" class="draw-btn">Préparer les convocations</button>
+    </div>
+
     <div class="home-card home-inventory">
       <span class="home-section-accent"></span>
       <h2>Inventaire textile</h2>
@@ -440,6 +447,74 @@
   </div>
 </div>
 
+<div id="conv-view" class="page hidden">
+  <div class="planning-topbar conv-topbar">
+    <div class="planning-title">
+      <span class="home-section-accent"></span>
+      <h1>Convocation</h1>
+    </div>
+    <span></span>
+    <button id="conv-home-btn" class="planning-home-btn" title="Accueil">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11l9-8 9 8" />
+        <path d="M5 10v10h14V10" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="conv-main">
+    <section class="planning-panel conv-settings">
+      <div class="conv-field">
+        <label for="conv-name">Nom du tournoi</label>
+        <input type="text" id="conv-name" placeholder="ex : P250 Messieurs" autocomplete="off">
+      </div>
+      <div class="conv-field-row">
+        <div class="conv-field">
+          <label for="conv-team-count">Nombre d'équipes</label>
+          <input type="number" id="conv-team-count" min="1" max="64" step="1">
+        </div>
+        <div class="conv-field">
+          <label for="conv-slot-count">Heures différentes</label>
+          <input type="number" id="conv-slot-count" min="1" max="12" step="1">
+        </div>
+      </div>
+
+      <h2>Heures de convocation</h2>
+      <ul id="conv-slots" class="conv-slots"></ul>
+      <button id="conv-distribute-btn" class="conv-secondary-btn">Répartir équitablement dans l'ordre</button>
+
+      <div id="conv-dropzone" class="import-dropzone conv-dropzone" role="button" tabindex="0">
+        <span class="import-dropzone-title">Importer les équipes (export FFT)</span>
+        <small>Glissez le fichier .xlsx ici ou cliquez — facultatif</small>
+      </div>
+      <input type="file" id="conv-file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+      <p id="conv-message" class="conv-message hidden"></p>
+
+      <div class="conv-actions">
+        <button id="conv-pdf-btn" class="planning-copy-btn">Générer le PDF</button>
+        <button id="conv-reset-btn" class="conv-secondary-btn conv-danger">Tout effacer</button>
+      </div>
+    </section>
+
+    <section class="planning-panel conv-teams-panel">
+      <h2>Équipes</h2>
+      <div class="conv-table-wrap">
+        <table class="conv-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Joueur 1</th>
+              <th>Joueur 2</th>
+              <th>Convocation</th>
+            </tr>
+          </thead>
+          <tbody id="conv-team-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>
+
 <div id="darts-view" class="page hidden">
   <button id="darts-home-btn" class="home-icon-btn" title="Mes tournois">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -708,6 +783,7 @@
 <script src="/convocation-pdf.js"></script>
 <script src="/inventory.js"></script>
 <script src="/planning.js"></script>
+<script src="/convocation.js"></script>
 <script src="/script.js"></script>
 </body>
 </html>

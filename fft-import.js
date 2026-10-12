@@ -95,7 +95,10 @@
   // Retourne { ok, teams, errors, warnings, waitingCount }. Les equipes sont
   // triees selon l'ordre officiel FFT (meilleure paire en 1er) et portent
   // fft.rank = 1..N, utilise par getRankedTeams() pour les tetes de serie.
-  function parseFftWorkbook(XLSX, workbook, expectedTeams) {
+  // options.anyCount : nombre de paires libre (page Convocation), toutes les
+  // paires valides du fichier sont gardees sans controle de nombre.
+  function parseFftWorkbook(XLSX, workbook, expectedTeams, options) {
+    const anyCount = !!(options && options.anyCount)
     const expected = expectedTeams || FFT_DEFAULT_TEAMS
     const errors = []
     const warnings = []
@@ -159,7 +162,9 @@
       })
     })
 
-    if (dataRows.length !== expected) {
+    if (anyCount) {
+      if (!teams.length) errors.push('Aucune paire valide dans le fichier.')
+    } else if (dataRows.length !== expected) {
       errors.push(`Le fichier contient ${dataRows.length} paire${dataRows.length > 1 ? 's' : ''}, ${expected} attendues.`)
     } else if (teams.length < expected) {
       errors.push(`Seulement ${teams.length} paires valides sur ${expected} : import annulé.`)

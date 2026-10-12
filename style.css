@@ -350,6 +350,7 @@ html, body {
 }
 
 .home-darts h2,
+.home-convocation h2,
 .home-inventory h2,
 .home-planning h2 {
   margin: 0 0 4px;
@@ -2224,4 +2225,274 @@ body.panel-collapsed .right-overlay {
 
 .player-ac strong {
   color: #fff;
+}
+
+/* Convocation : reglages a gauche, equipes a droite (meme cadre que le planning). */
+#conv-view {
+  height: 100vh;
+  height: 100dvh;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#conv-view.hidden {
+  display: none;
+}
+
+.conv-main {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(320px, 2fr) minmax(0, 3fr);
+  gap: 20px;
+}
+
+.conv-settings {
+  overflow-y: auto;
+  gap: 12px;
+}
+
+.conv-settings h2,
+.conv-teams-panel h2 {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.conv-teams-panel h2 {
+  margin-bottom: 10px;
+}
+
+.conv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.conv-field label {
+  color: #ccc;
+  font-size: 0.85rem;
+}
+
+.conv-field-row {
+  display: flex;
+  gap: 12px;
+}
+
+#conv-view input,
+#conv-view select {
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+#conv-view input:focus,
+#conv-view select:focus {
+  outline: none;
+  border-color: #fcd34d;
+}
+
+#conv-view input[readonly] {
+  color: #999;
+  background: #0d0d0d;
+}
+
+#conv-view input[type='time'] {
+  color-scheme: dark;
+}
+
+.conv-slots {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conv-slots li {
+  display: grid;
+  grid-template-columns: 70px 1fr 70px auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.conv-slot-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.conv-slot-unit {
+  color: #999;
+  font-size: 0.85rem;
+}
+
+/* Pastille de couleur par heure (6 couleurs en boucle). */
+.conv-slots li:nth-child(6n + 1) .conv-slot-label { color: #fcd34d; }
+.conv-slots li:nth-child(6n + 2) .conv-slot-label { color: #60a5fa; }
+.conv-slots li:nth-child(6n + 3) .conv-slot-label { color: #4ade80; }
+.conv-slots li:nth-child(6n + 4) .conv-slot-label { color: #f472b6; }
+.conv-slots li:nth-child(6n + 5) .conv-slot-label { color: #fb923c; }
+.conv-slots li:nth-child(6n + 6) .conv-slot-label { color: #c084fc; }
+
+.conv-table tr.conv-slot-0 td:first-child { box-shadow: inset 3px 0 #fcd34d; }
+.conv-table tr.conv-slot-1 td:first-child { box-shadow: inset 3px 0 #60a5fa; }
+.conv-table tr.conv-slot-2 td:first-child { box-shadow: inset 3px 0 #4ade80; }
+.conv-table tr.conv-slot-3 td:first-child { box-shadow: inset 3px 0 #f472b6; }
+.conv-table tr.conv-slot-4 td:first-child { box-shadow: inset 3px 0 #fb923c; }
+.conv-table tr.conv-slot-5 td:first-child { box-shadow: inset 3px 0 #c084fc; }
+
+.conv-secondary-btn {
+  padding: 10px 14px;
+  background: transparent;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.conv-secondary-btn:hover {
+  border-color: #fff;
+}
+
+.conv-secondary-btn.conv-danger {
+  color: #ff4d4d;
+  border-color: #661111;
+}
+
+.conv-secondary-btn.conv-danger:hover {
+  border-color: red;
+}
+
+.conv-dropzone {
+  margin: 4px 0 0;
+  padding: 16px;
+}
+
+.conv-message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #166534;
+  border-radius: 6px;
+  color: #4ade80;
+  font-size: 0.85rem;
+}
+
+.conv-message.error {
+  border-color: red;
+  color: #ff4d4d;
+}
+
+.conv-message.hidden {
+  display: none;
+}
+
+.conv-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.conv-actions .planning-copy-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.conv-teams-panel {
+  min-width: 0;
+}
+
+.conv-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.conv-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.conv-table th {
+  position: sticky;
+  top: 0;
+  background: #0a0a0a;
+  color: #999;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: left;
+  padding: 0 6px 8px;
+}
+
+.conv-table td {
+  padding: 3px 6px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.conv-table td input,
+.conv-table td select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.conv-rank {
+  width: 36px;
+  text-align: center;
+  color: #999;
+  font-weight: 600;
+}
+
+.conv-table td:last-child {
+  width: 110px;
+}
+
+/* Ecran etroit (telephone) : reglages puis equipes, la page defile. */
+@media (max-width: 800px) {
+  #conv-view {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding: 16px;
+  }
+
+  .conv-topbar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .conv-topbar > span:empty {
+    display: none;
+  }
+
+  .conv-main {
+    grid-template-columns: 1fr;
+  }
+
+  .conv-table-wrap {
+    overflow: visible;
+  }
+
+  .conv-slots li {
+    grid-template-columns: 60px 1fr 60px auto;
+  }
 }
