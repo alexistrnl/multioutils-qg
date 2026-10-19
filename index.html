@@ -56,12 +56,13 @@
 </div>
 
 <div id="tournament-type-modal-backdrop" class="modal-backdrop hidden">
-  <div class="modal">
+  <div class="modal tournament-type-modal">
     <h2>Nouveau tournoi</h2>
-    <p class="tournament-type-text">Choisissez un type de tournoi</p>
-    <div class="form-actions tournament-type-actions" id="tournament-type-list"></div>
-    <div class="form-actions">
-      <button id="tournament-type-cancel-btn">Annuler</button>
+    <span class="home-section-accent"></span>
+    <p class="tournament-type-text">Choisissez le format du tournoi</p>
+    <div class="tournament-type-grid" id="tournament-type-list"></div>
+    <div class="tournament-type-footer">
+      <button id="tournament-type-cancel-btn" class="tournament-type-cancel">Annuler</button>
     </div>
   </div>
 </div>
@@ -121,16 +122,16 @@
   <div class="modal convocation-modal">
     <h2>Convocations</h2>
     <p class="tournament-type-text">Heures reprises sur le PDF, dans l'ordre du gestionnaire des équipes.</p>
-    <div class="convocation-row">
+    <div class="convocation-row" id="convocation-ts14-row">
       <label for="convocation-ts14">Convocation TS 1 à 4</label>
       <input type="time" id="convocation-ts14">
     </div>
-    <div class="convocation-row">
+    <div class="convocation-row" id="convocation-ts58-row">
       <label for="convocation-ts58">Convocation TS 5 à 8</label>
       <input type="time" id="convocation-ts58">
     </div>
     <div class="convocation-row">
-      <label for="convocation-rest">Convocation paires 9 à 16</label>
+      <label for="convocation-rest" id="convocation-rest-label">Convocation paires 9 à 16</label>
       <input type="time" id="convocation-rest">
     </div>
     <p id="convocation-error" class="team-name-error hidden"></p>
@@ -171,6 +172,8 @@
     <div id="t12-team-count">0 équipe</div>
     <button id="t12-add-team-btn">+ Ajouter une équipe</button>
     <button id="t12-fill-random-btn" class="fill-random-btn">Remplir aléatoire</button>
+    <button id="t12-convocation-btn" class="convocation-btn">Convocation (PDF)</button>
+    <button id="t12-send-convocation-btn" class="convocation-btn">Envoyer convocation</button>
 
     <ul id="t12-team-list"></ul>
   </div>
@@ -217,6 +220,64 @@
       <div class="t12-boxes t12-col5">
         <div class="t12-box" data-t12-box="col5-1"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="tournament8-view" class="page hidden">
+  <div class="demarcation"></div>
+  <button id="t8-toggle-panel" class="panel-toggle-btn">›</button>
+  <div class="right-overlay"></div>
+  <div class="draw-buttons">
+    <button id="t8-draw-round1-btn" class="draw-btn">Tirer les premiers matchs</button>
+    <button id="t8-reset-draw-btn" class="reset-btn" title="Réinitialiser le tirage">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7v6h6" />
+        <path d="M3.51 13a9 9 0 1 0 2.13-9.36L3 7" />
+      </svg>
+    </button>
+  </div>
+
+  <div class="left-panel">
+    <div id="t8-team-count">0 équipe</div>
+    <button id="t8-add-team-btn">+ Ajouter une équipe</button>
+    <button id="t8-fill-random-btn" class="fill-random-btn">Remplir aléatoire</button>
+    <button id="t8-convocation-btn" class="convocation-btn">Convocation (PDF)</button>
+    <button id="t8-send-convocation-btn" class="convocation-btn">Envoyer convocation</button>
+
+    <ul id="t8-team-list"></ul>
+  </div>
+
+  <button id="tournament8-home-btn" class="home-icon-btn" title="Mes tournois">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 11l9-8 9 8" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  </button>
+  <div class="t8-bracket">
+    <svg class="t8-connectors-svg" id="t8-connectors-svg"></svg>
+    <div class="t8-boxes">
+      <div class="t8-box" data-t8-box="col1-1"></div>
+      <div class="t8-box" data-t8-box="col1-2"></div>
+      <div class="t8-box" data-t8-box="col1-3"></div>
+      <div class="t8-box" data-t8-box="col1-4"></div>
+      <div class="t8-box" data-t8-box="col1-5"></div>
+      <div class="t8-box" data-t8-box="col1-6"></div>
+      <div class="t8-box" data-t8-box="col1-7"></div>
+      <div class="t8-box" data-t8-box="col1-8"></div>
+    </div>
+    <div class="t8-boxes t8-col2">
+      <div class="t8-box" data-t8-box="col2-1"></div>
+      <div class="t8-box" data-t8-box="col2-2"></div>
+      <div class="t8-box" data-t8-box="col2-3"></div>
+      <div class="t8-box" data-t8-box="col2-4"></div>
+    </div>
+    <div class="t8-boxes t8-col3">
+      <div class="t8-box" data-t8-box="col3-1"></div>
+      <div class="t8-box" data-t8-box="col3-2"></div>
+    </div>
+    <div class="t8-boxes">
+      <div class="t8-box" data-t8-box="col4-1"></div>
     </div>
   </div>
 </div>
@@ -569,7 +630,7 @@
 
   <div id="darts-finale" class="darts-finale hidden">
     <div class="darts-finale-match">
-      <h3>Demi-finales — 1er Poule A vs 1er Poule C, 1er Poule B vs 1er Poule D</h3>
+      <h3 id="darts-finale-semis-title">Demi-finales</h3>
       <div class="darts-finale-row" id="darts-finale-semis"></div>
     </div>
     <div class="darts-finale-match">
@@ -584,7 +645,12 @@
 
   <div id="darts-players-list-modal-backdrop" class="modal-backdrop hidden">
     <div class="modal">
-      <h2>Joueurs (<span id="darts-players-count">0</span>/20)</h2>
+      <h2>Joueurs (<span id="darts-players-count">0</span>/<span id="darts-players-total">20</span>)</h2>
+      <div class="darts-player-count-row">
+        <label for="darts-player-count-input">Nombre de joueurs</label>
+        <input type="number" id="darts-player-count-input" min="2" max="20" step="1">
+        <span id="darts-poules-summary" class="darts-poules-summary"></span>
+      </div>
       <div class="darts-players-table-wrap">
         <table class="team-table darts-players-table">
           <thead>

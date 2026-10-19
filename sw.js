@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qg-padel-v27'
+const CACHE_NAME = 'qg-padel-v39'
 const APP_SHELL = ['/index.html', '/style.css', '/script.js', '/logo.png', '/manifest.json', '/players-directory.js', '/fft-import.js', '/convocation-pdf.js', '/inventory.js', '/planning.js', '/convocation.js']
 
 self.addEventListener('install', (event) => {

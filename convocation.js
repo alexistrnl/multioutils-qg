@@ -252,6 +252,7 @@ function showConvocationView() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   inventoryView.classList.add('hidden')
   planningView.classList.add('hidden')
   convView.classList.remove('hidden')

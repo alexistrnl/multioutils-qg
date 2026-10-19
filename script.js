@@ -187,10 +187,12 @@ let formatCounters = {}
 // Liste des types de tournoi proposes dans la modale "+ Nouveau tournoi".
 // Ajouter un format ici (id unique + libelle) suffira a le faire apparaitre
 // dans le choix, une fois son propre rendu de bracket branche.
+// Le format 9 equipes (poules) n'est plus propose a la creation, mais ses
+// vues restent branchees pour rouvrir les tournois deja crees.
 const TOURNAMENT_FORMATS = [
-  { id: '16', label: '16 équipes', description: 'Tableau à élimination directe, 16 équipes' },
-  { id: '12', label: '12 équipes', description: 'Tableau à élimination directe, 12 équipes (4 exemptées)' },
-  { id: '9', label: '9 équipes', description: 'Tournoi à 9 équipes (modèle à venir)' },
+  { id: '16', label: '16', description: 'Tableau à élimination directe, 8 têtes de série' },
+  { id: '12', label: '12', description: 'Élimination directe, TS 1 à 4 exemptées du 1er tour' },
+  { id: '8', label: '8', description: 'Nouveau format, tableau en préparation' },
 ]
 
 function createTournament(name, format) {
@@ -262,6 +264,7 @@ function saveState() {
   if (active) {
     if (active.format === DEFAULT_FORMAT) active.boxes = snapshotBoxes()
     else if (active.format === '12') active.boxes = snapshotT12Boxes()
+    else if (active.format === '8') active.boxes = snapshotT8Boxes()
     else if (active.format === '9') active.boxes = snapshotT9Boxes()
   }
 
@@ -358,6 +361,27 @@ function renderTeams12() {
   saveState()
 }
 
+const t8List = document.getElementById('t8-team-list')
+const t8TeamCount = document.getElementById('t8-team-count')
+
+function renderTeams8() {
+  const active = getActiveTournament()
+  t8List.innerHTML = ''
+
+  // Pas de tetes de serie dans ce format : simple numerotation.
+  getRankedTeams().forEach((team, i) => {
+    const li = document.createElement('li')
+    li.textContent = `${i + 1}. ${teamListLabel(team)}`
+    li.classList.add('team-item', 'rank-yellow')
+    li.addEventListener('click', () => showTeamDetails(team))
+    t8List.appendChild(li)
+  })
+
+  const n = active.teams.length
+  t8TeamCount.textContent = `${n} équipe${n > 1 ? 's' : ''}`
+  saveState()
+}
+
 const t9List = document.getElementById('t9-team-list')
 const t9TeamCount = document.getElementById('t9-team-count')
 
@@ -386,6 +410,10 @@ function renderTeams() {
   }
   if (format === '9') {
     renderTeams9()
+    return
+  }
+  if (format === '8') {
+    renderTeams8()
     return
   }
 
@@ -981,6 +1009,22 @@ function restoreT12Boxes(snap) {
   })
 }
 
+function snapshotT8Boxes() {
+  const snap = {}
+  document.querySelectorAll('.t8-box').forEach((box) => {
+    snap[box.dataset.t8Box] = { text: box.textContent }
+  })
+  return snap
+}
+
+function restoreT8Boxes(snap) {
+  document.querySelectorAll('.t8-box').forEach((box) => {
+    const s = snap && snap[box.dataset.t8Box]
+    box.textContent = s ? s.text : ''
+    box.classList.remove('pop-in')
+  })
+}
+
 function snapshotT9Boxes() {
   const snap = {}
   document.querySelectorAll('.t9-box').forEach((box) => {
@@ -1008,6 +1052,7 @@ const dartsResultsPanel = document.getElementById('darts-results-panel')
 const dartsResultsToggleBtn = document.getElementById('darts-results-toggle-btn')
 const tournament12View = document.getElementById('tournament12-view')
 const tournament9View = document.getElementById('tournament9-view')
+const tournament8View = document.getElementById('tournament8-view')
 const inventoryView = document.getElementById('inventory-view')
 const planningView = document.getElementById('planning-view')
 
@@ -1144,6 +1189,8 @@ function renderRoute() {
           showTournament12View(t)
         } else if (t.format === '9') {
           showTournament9View(t)
+        } else if (t.format === '8') {
+          showTournament8View(t)
         }
       }
       return
@@ -1166,6 +1213,7 @@ function showHomePage() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   homePage.classList.remove('hidden')
 }
 
@@ -1175,6 +1223,7 @@ function showInventoryView() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   inventoryView.classList.remove('hidden')
   document.documentElement.classList.add('inventory-open')
   renderInventory()
@@ -1186,6 +1235,7 @@ function showPlanningView() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   inventoryView.classList.add('hidden')
   planningView.classList.remove('hidden')
   renderPlanning()
@@ -1200,6 +1250,7 @@ function showDartsView(t) {
   tournamentView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   dartsView.classList.remove('hidden')
   checkAllPoulesFinalized()
 }
@@ -1209,6 +1260,7 @@ function showTournament12View(t) {
   dartsView.classList.add('hidden')
   tournamentView.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   tournament12View.classList.remove('hidden')
   restoreT12Boxes(t.boxes)
   renderTeams()
@@ -1218,11 +1270,88 @@ function showTournament12View(t) {
   drawT12Connectors()
 }
 
+function showTournament8View(t) {
+  homePage.classList.add('hidden')
+  dartsView.classList.add('hidden')
+  tournamentView.classList.add('hidden')
+  tournament12View.classList.add('hidden')
+  tournament9View.classList.add('hidden')
+  tournament8View.classList.remove('hidden')
+  restoreT8Boxes(t.boxes)
+  renderTeams()
+  // Positions fausses tant que la vue etait cachee : on redessine une fois visible.
+  drawT8Connectors()
+}
+
+// Liens du tableau 8 equipes, meme principe que T12_LINKS : chaque paire de
+// cases source (from) converge vers 1 case cible (to).
+const T8_LINKS = [
+  {
+    from: 'col1',
+    to: 'col2',
+    pairs: [
+      { from: [1, 2], to: 1 },
+      { from: [3, 4], to: 2 },
+      { from: [5, 6], to: 3 },
+      { from: [7, 8], to: 4 },
+    ],
+  },
+  {
+    from: 'col2',
+    to: 'col3',
+    pairs: [
+      { from: [1, 2], to: 1 },
+      { from: [3, 4], to: 2 },
+    ],
+  },
+  {
+    from: 'col3',
+    to: 'col4',
+    pairs: [{ from: [1, 2], to: 1 }],
+  },
+]
+
+function drawT8Connectors() {
+  const container = document.querySelector('.t8-bracket')
+  const svg = document.getElementById('t8-connectors-svg')
+  if (!container || !svg) return
+  const containerRect = container.getBoundingClientRect()
+
+  const anchor = (boxName, side) => {
+    const el = container.querySelector(`[data-t8-box="${boxName}"]`)
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return {
+      x: (side === 'right' ? r.right : r.left) - containerRect.left,
+      y: r.top + r.height / 2 - containerRect.top,
+    }
+  }
+
+  const lines = []
+  T8_LINKS.forEach((link) => {
+    link.pairs.forEach((pair) => {
+      const to = anchor(`${link.to}-${pair.to}`, 'left')
+      if (!to) return
+      pair.from.forEach((idx) => {
+        const from = anchor(`${link.from}-${idx}`, 'right')
+        if (from) lines.push({ ...from, x2: to.x, y2: to.y })
+      })
+    })
+  })
+
+  svg.innerHTML = lines
+    .map((l) => `<line x1="${l.x}" y1="${l.y}" x2="${l.x2}" y2="${l.y2}" class="connector-line" />`)
+    .join('')
+}
+
+window.addEventListener('resize', drawT8Connectors)
+
 function showTournament9View(t) {
   homePage.classList.add('hidden')
   dartsView.classList.add('hidden')
   tournamentView.classList.add('hidden')
   tournament12View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   tournament9View.classList.remove('hidden')
   restoreT9Boxes(t.boxes)
   renderTeams()
@@ -1381,6 +1510,7 @@ document.getElementById('convocation-open-btn').addEventListener('click', () => 
 document.getElementById('conv-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('tournament8-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 
 const t12ToggleBtn = document.getElementById('t12-toggle-panel')
 t12ToggleBtn.addEventListener('click', () => {
@@ -1399,6 +1529,40 @@ document.getElementById('t12-fill-random-btn').addEventListener('click', () => {
 
   active.teams.push(...generateFakeTeams(missing))
   renderTeams()
+})
+
+const t8ToggleBtn = document.getElementById('t8-toggle-panel')
+t8ToggleBtn.addEventListener('click', () => {
+  const collapsed = document.body.classList.toggle('panel-collapsed')
+  t8ToggleBtn.textContent = collapsed ? '›' : '‹'
+})
+
+document.getElementById('t8-add-team-btn').addEventListener('click', () => {
+  modalBackdrop.classList.remove('hidden')
+})
+
+document.getElementById('t8-fill-random-btn').addEventListener('click', () => {
+  const active = getActiveTournament()
+  const missing = 8 - active.teams.length
+  if (missing <= 0) return
+
+  active.teams.push(...generateFakeTeams(missing))
+  renderTeams()
+})
+
+// Tirage du 1er tour : les 8 equipes placees au hasard dans la 1re colonne.
+document.getElementById('t8-draw-round1-btn').addEventListener('click', () => {
+  if (!ensureTeamNames()) return
+  const draw = shuffleArray(getActiveTournament().teams).slice(0, 8)
+  const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t8-box="col1-${i}"]`))
+  animateFillBoxes(boxes, draw)
+})
+
+document.getElementById('t8-reset-draw-btn').addEventListener('click', () => {
+  if (!confirm('Réinitialiser le tirage ? Les cases du tableau seront vidées (les équipes restent).')) return
+
+  restoreT8Boxes({})
+  saveState()
 })
 
 const t9ToggleBtn = document.getElementById('t9-toggle-panel')
@@ -1713,15 +1877,24 @@ document.getElementById('t12-reset-draw-btn').addEventListener('click', () => {
   saveState()
 })
 
-const dartsRound1b = document.getElementById('darts-round-1b')
-;['Poule A', 'Poule B', 'Poule C', 'Poule D'].forEach((label) => {
-  const box = document.createElement('div')
-  box.className = 'bracket-box'
-  box.textContent = label
-  dartsRound1b.appendChild(box)
-})
+// Nombre de joueurs variable (2 a 20). Le nombre de poules en decoule :
+// jusqu'a 5 joueurs -> 1 poule, jusqu'a 10 -> 2, jusqu'a 15 -> 3, au-dela -> 4.
+// Repartition equitable (au plus 1 joueur d'ecart, les premieres poules
+// prennent le surplus), numeros attribues poule par poule.
+const DARTS_MIN_PLAYERS = 2
+const DARTS_MAX_PLAYERS = 20
+const DARTS_DEFAULT_PLAYERS = 20
+const POULE_LETTERS = ['A', 'B', 'C', 'D']
 
-const POULE_LABELS = ['A', 'B', 'C', 'D']
+function dartsPouleSizes(n) {
+  const count = n <= 5 ? 1 : n <= 10 ? 2 : n <= 15 ? 3 : 4
+  const base = Math.floor(n / count)
+  const extra = n % count
+  return Array.from({ length: count }, (_, i) => base + (i < extra ? 1 : 0))
+}
+
+let POULE_LABELS = [] // lettres des poules actives (A, B...)
+let pouleSizes = [] // nombre de joueurs de chaque poule, meme ordre
 const dartsPlayers = [] // index = numero global - 1, { number, prenom, nom, poule, nameEl, dotEls, matchesPlayed }
 
 function playerFullName(player) {
@@ -1730,58 +1903,88 @@ function playerFullName(player) {
 
 const pouleColEls = {} // poule (lettre) -> element DOM de la colonne
 
+const dartsRound1b = document.getElementById('darts-round-1b')
 const dartsPouleTeams = document.getElementById('darts-poule-teams')
-for (let p = 0; p < 4; p++) {
-  const col = document.createElement('div')
-  col.className = 'poule-col'
-  pouleColEls[POULE_LABELS[p]] = col
-  for (let i = 0; i < 5; i++) {
+
+// (Re)construit les poules et les cases joueurs a partir d'une liste
+// d'identites [{ prenom, nom, conso, participation }] (sa longueur donne le
+// nombre de joueurs). Les matchs ne sont pas touches : voir initDartsMatches.
+function buildDartsBoard(identities) {
+  pouleSizes = dartsPouleSizes(identities.length)
+  POULE_LABELS = POULE_LETTERS.slice(0, pouleSizes.length)
+  dartsPlayers.length = 0
+  Object.keys(pouleColEls).forEach((k) => delete pouleColEls[k])
+  dartsRound1b.innerHTML = ''
+  dartsPouleTeams.innerHTML = ''
+
+  POULE_LABELS.forEach((label) => {
     const box = document.createElement('div')
-    box.className = 'bracket-box player-box'
+    box.className = 'bracket-box'
+    box.textContent = `Poule ${label}`
+    dartsRound1b.appendChild(box)
+  })
 
-    const playerNumber = p * 5 + i + 1
-    const savedPlayer = restoredDartsData && restoredDartsData.players && restoredDartsData.players[playerNumber - 1]
-    const dotEls = []
-    const player = {
-      number: playerNumber,
-      prenom: savedPlayer ? savedPlayer.prenom : randomItem(FAKE_PRENOMS),
-      nom: savedPlayer ? savedPlayer.nom : randomItem(FAKE_NOMS),
-      conso: savedPlayer ? !!savedPlayer.conso : false,
-      participation: savedPlayer ? !!savedPlayer.participation : false,
-      poule: POULE_LABELS[p],
-      dotEls,
-      matchesPlayed: 0,
-      boxEl: box,
+  let playerNumber = 0
+  pouleSizes.forEach((size, p) => {
+    const col = document.createElement('div')
+    col.className = 'poule-col'
+    pouleColEls[POULE_LABELS[p]] = col
+    for (let i = 0; i < size; i++) {
+      playerNumber++
+      const box = document.createElement('div')
+      box.className = 'bracket-box player-box'
+
+      const identity = identities[playerNumber - 1] || {}
+      const dotEls = []
+      const player = {
+        number: playerNumber,
+        prenom: identity.prenom || '',
+        nom: identity.nom || '',
+        conso: !!identity.conso,
+        participation: !!identity.participation,
+        poule: POULE_LABELS[p],
+        dotEls,
+        matchesPlayed: 0,
+        boxEl: box,
+      }
+      dartsPlayers.push(player)
+
+      const number = document.createElement('span')
+      number.className = 'player-number'
+      number.textContent = playerNumber
+      box.appendChild(number)
+
+      const name = document.createElement('span')
+      name.className = 'player-name'
+      name.textContent = playerFullName(player)
+      player.nameEl = name
+      box.appendChild(name)
+
+      // Une pastille par match de poule (chacun affronte tous les autres).
+      const dots = document.createElement('span')
+      dots.className = 'match-dots'
+      for (let m = 0; m < size - 1; m++) {
+        const dot = document.createElement('span')
+        dot.className = 'match-dot'
+        dots.appendChild(dot)
+        dotEls.push(dot)
+      }
+      box.appendChild(dots)
+
+      col.appendChild(box)
     }
-    dartsPlayers.push(player)
-
-    const number = document.createElement('span')
-    number.className = 'player-number'
-    number.textContent = playerNumber
-    box.appendChild(number)
-
-    const name = document.createElement('span')
-    name.className = 'player-name'
-    name.textContent = playerFullName(player)
-    player.nameEl = name
-    box.appendChild(name)
-
-    const dots = document.createElement('span')
-    dots.className = 'match-dots'
-    for (let m = 0; m < 4; m++) {
-      const dot = document.createElement('span')
-      dot.className = 'match-dot'
-      dots.appendChild(dot)
-      dotEls.push(dot)
-    }
-    box.appendChild(dots)
-
-    col.appendChild(box)
-  }
-  dartsPouleTeams.appendChild(col)
+    dartsPouleTeams.appendChild(col)
+  })
 }
 
-// Liste des joueurs (popup "Joueurs") : les 20 emplacements des poules sont
+// Premier chargement sans sauvegarde : 20 joueurs fictifs, comme avant.
+buildDartsBoard(
+  restoredDartsData && restoredDartsData.players && restoredDartsData.players.length
+    ? restoredDartsData.players
+    : Array.from({ length: DARTS_DEFAULT_PLAYERS }, () => ({ prenom: randomItem(FAKE_PRENOMS), nom: randomItem(FAKE_NOMS) }))
+)
+
+// Liste des joueurs (popup "Joueurs") : les emplacements des poules sont
 // fixes, ce popup se contente d'exposer le prenom de chaque emplacement ainsi
 // que deux cases a cocher (Conso / Participation) pour le suivi cote bar.
 const dartsPlayersListModalBackdrop = document.getElementById('darts-players-list-modal-backdrop')
@@ -1848,7 +2051,43 @@ function renderDartsPlayersList() {
     dartsPlayersListTbody.appendChild(row)
   })
   dartsPlayersCountEl.textContent = filledCount
+  dartsPlayersTotalEl.textContent = dartsPlayers.length
+  dartsPlayerCountInput.value = dartsPlayers.length
+  dartsPoulesSummaryEl.textContent = dartsPoulesSummary(pouleSizes)
 }
+
+const dartsPlayersTotalEl = document.getElementById('darts-players-total')
+const dartsPlayerCountInput = document.getElementById('darts-player-count-input')
+const dartsPoulesSummaryEl = document.getElementById('darts-poules-summary')
+
+// "3 poules : 5 + 4 + 4"
+function dartsPoulesSummary(sizes) {
+  return `${sizes.length} poule${sizes.length > 1 ? 's' : ''} : ${sizes.join(' + ')}`
+}
+
+// Changement du nombre de joueurs : les identites des emplacements conserves
+// restent (on coupe ou on ajoute des emplacements vides en fin de liste),
+// mais poules et calendrier sont refaits, donc les matchs repartent de zero.
+dartsPlayerCountInput.addEventListener('change', () => {
+  const n = Math.round(Number(dartsPlayerCountInput.value))
+  if (!Number.isFinite(n) || n < DARTS_MIN_PLAYERS || n > DARTS_MAX_PLAYERS) {
+    alert(`Le nombre de joueurs doit être entre ${DARTS_MIN_PLAYERS} et ${DARTS_MAX_PLAYERS}.`)
+    dartsPlayerCountInput.value = dartsPlayers.length
+    return
+  }
+  if (n === dartsPlayers.length) return
+  if (dartsSchedule.some((m) => m.done) && !window.confirm('Changer le nombre de joueurs refait les poules : les matchs déjà joués seront effacés. Continuer ?')) {
+    dartsPlayerCountInput.value = dartsPlayers.length
+    return
+  }
+  const identities = Array.from({ length: n }, (_, i) => {
+    const p = dartsPlayers[i]
+    return p ? { prenom: p.prenom, nom: p.nom, conso: p.conso, participation: p.participation } : {}
+  })
+  buildDartsBoard(identities)
+  resetDartsTournament(false)
+  renderDartsPlayersList()
+})
 
 document.getElementById('darts-players-btn').addEventListener('click', () => {
   renderDartsPlayersList()
@@ -1933,7 +2172,7 @@ document.getElementById('darts-reset-matches-btn').addEventListener('click', () 
 })
 
 document.getElementById('darts-reset-all-btn').addEventListener('click', () => {
-  if (!window.confirm('Tout réinitialiser ? Les matchs ET les noms des 20 joueurs seront effacés, il faudra tous les retaper.')) return
+  if (!window.confirm('Tout réinitialiser ? Les matchs ET les noms des joueurs seront effacés, il faudra tous les retaper.')) return
   closeDartsResetModal()
   resetDartsTournament(true)
 })
@@ -1947,13 +2186,10 @@ for (let c = 0; c < 2; c++) {
   })
 }
 
-// Calendrier des matchs de poule : methode du cercle (round-robin standard)
-// pour 5 joueurs -> 5 tours de 2 matchs (+ 1 exempt de tour), ce qui espace
-// equitablement les matchs de chacun (jamais deux tours de suite sans repos
-// bien reparti). Cible 1 est dediee aux poules A+B et cible 2 aux poules C+D ;
-// sur chaque cible, les matchs des deux poules sont entrelaces un par un
-// (A, B, A, B, ... / C, D, C, D, ...) en respectant l'ordre des tours propre
-// a chaque poule (cf buildPouleMatches/interleave plus bas).
+// Calendrier des matchs de poule : methode du cercle (round-robin standard),
+// ex. 5 joueurs -> 5 tours de 2 matchs (+ 1 exempt de tour), ce qui espace
+// equitablement les matchs de chacun. Repartition sur les cibles : voir
+// buildDartsQueues plus bas.
 function roundRobinRounds(n) {
   const hasBye = n % 2 !== 0
   const slots = hasBye ? [...Array(n).keys()].map((i) => i + 1).concat([null]) : [...Array(n).keys()].map((i) => i + 1)
@@ -1975,8 +2211,9 @@ function roundRobinRounds(n) {
 }
 
 function buildPouleMatches(pouleIndex) {
-  const localRounds = roundRobinRounds(5) // 5 joueurs -> 5 tours, decale par l'offset de la poule
-  const offset = pouleIndex * 5
+  // Numeros locaux 1..taille de la poule, decales par les joueurs des poules precedentes.
+  const localRounds = roundRobinRounds(pouleSizes[pouleIndex])
+  const offset = pouleSizes.slice(0, pouleIndex).reduce((sum, s) => sum + s, 0)
   const poule = POULE_LABELS[pouleIndex]
   const matches = []
   localRounds.forEach((round, r) => {
@@ -1989,25 +2226,23 @@ function buildPouleMatches(pouleIndex) {
   return matches
 }
 
-// Assemble deux listes en alternant un element de chacune (a1, b1, a2, b2, ...).
-function interleave(listA, listB) {
-  const result = []
-  const len = Math.max(listA.length, listB.length)
-  for (let i = 0; i < len; i++) {
-    if (listA[i]) result.push(listA[i])
-    if (listB[i]) result.push(listB[i])
-  }
-  return result
-}
-
-// Cible 1 est dediee aux poules A et B (un match sur deux de chaque, en
-// alternance), Cible 2 aux poules C et D, meme fonctionnement.
-function queueIndexForPoule(poule) {
-  return poule === 'A' || poule === 'B' ? 0 : 1
+// Repartition sur les 2 cibles, quel que soit le nombre de poules : tous les
+// matchs entrelaces poule par poule (A1, B1, C1, A2...), puis un sur deux a
+// chaque cible, pour que les 2 cibles aient autant de matchs meme quand les
+// poules sont de tailles differentes. assignNextMatch evite qu'un joueur soit
+// appele sur les 2 cibles a la fois.
+// Matchs de classement : sur la cible qui a le moins de matchs en attente.
+function queueIndexForPoule() {
+  const remaining = (c) => dartsQueues[c].length - dartsQueueIndex[c]
+  return remaining(0) <= remaining(1) ? 0 : 1
 }
 
 function buildDartsQueues() {
-  return [interleave(buildPouleMatches(0), buildPouleMatches(1)), interleave(buildPouleMatches(2), buildPouleMatches(3))]
+  const perPoule = POULE_LABELS.map((_, p) => buildPouleMatches(p))
+  const all = []
+  const len = Math.max(...perPoule.map((list) => list.length))
+  for (let i = 0; i < len; i++) perPoule.forEach((list) => list[i] && all.push(list[i]))
+  return [all.filter((_, i) => i % 2 === 0), all.filter((_, i) => i % 2 === 1)]
 }
 
 // Affiche, sous chaque cible, la suite de sa propre file d'attente (le match
@@ -2046,14 +2281,30 @@ function markPlayerDot(player, won) {
   player.matchesPlayed++
 }
 
+// Un joueur ne peut pas etre sur les 2 cibles en meme temps : on prend le
+// premier match de la file dont aucun joueur n'est deja appele sur l'autre
+// cible, et on le remonte en tete de ce qui reste (les matchs attribues
+// restent ainsi un prefixe de la file).
 function assignNextMatch(cibleIndex) {
   const queue = dartsQueues[cibleIndex]
-  if (dartsQueueIndex[cibleIndex] < queue.length) {
-    cibleMatch[cibleIndex] = queue[dartsQueueIndex[cibleIndex]]
-    dartsQueueIndex[cibleIndex]++
-  } else {
+  const start = dartsQueueIndex[cibleIndex]
+  if (start >= queue.length) {
     cibleMatch[cibleIndex] = null
+    return
   }
+  const other = cibleMatch[1 - cibleIndex]
+  const busy = other ? [other.a, other.b] : []
+  const i = queue.findIndex((m, idx) => idx >= start && !busy.includes(m.a) && !busy.includes(m.b))
+  if (i === -1) {
+    // Tous les matchs restants attendent un joueur deja sur l'autre cible :
+    // cible en attente, relancee a la fin du match de l'autre cible.
+    cibleMatch[cibleIndex] = null
+    return
+  }
+  const [match] = queue.splice(i, 1)
+  queue.splice(start, 0, match)
+  cibleMatch[cibleIndex] = match
+  dartsQueueIndex[cibleIndex]++
 }
 
 function renderCiblePanels() {
@@ -2065,7 +2316,8 @@ function renderCiblePanels() {
     if (!match) {
       const empty = document.createElement('div')
       empty.className = 'cible-match-empty'
-      empty.textContent = 'Tous les matchs sont terminés'
+      empty.textContent =
+        dartsQueueIndex[c] < dartsQueues[c].length ? 'En attente (joueur sur l’autre cible)' : 'Tous les matchs sont terminés'
       container.appendChild(empty)
       continue
     }
@@ -2091,6 +2343,7 @@ function renderCiblePanels() {
       markPlayerDot(loser, false)
       reorderPouleColumn(match.poule)
       assignNextMatch(c)
+      if (!cibleMatch[1 - c]) assignNextMatch(1 - c)
       dartsResults.push(match)
       renderDartsSchedule()
       renderCiblePanels()
@@ -2122,6 +2375,8 @@ function initDartsMatches() {
   dartsQueues = buildDartsQueues()
   dartsSchedule = [...dartsQueues[0], ...dartsQueues[1]]
   dartsQueueIndex = [0, 0]
+  cibleMatch[0] = null
+  cibleMatch[1] = null
   assignNextMatch(0)
   assignNextMatch(1)
   renderDartsSchedule()
@@ -2248,9 +2503,10 @@ function checkPouleStatus(poule) {
       }
     }
     dartsSchedule.push(...newMatches)
-    dartsQueues[queueIndexForPoule(poule)].push(...newMatches)
-    const c = queueIndexForPoule(poule)
+    const c = queueIndexForPoule()
+    dartsQueues[c].push(...newMatches)
     if (!cibleMatch[c]) assignNextMatch(c)
+    if (!cibleMatch[1 - c]) assignNextMatch(1 - c)
     renderDartsSchedule()
     renderCiblePanels()
     return
@@ -2265,8 +2521,10 @@ function checkPouleStatus(poule) {
 // 1er de chaque poule passe en demi-finale croisee (A contre C, B contre D),
 // affichee directement sur la page fleche (pas de route separee). Vainqueurs
 // -> finale, perdants -> petite finale (3eme place).
+// Avec une seule poule, pas de phase finale : le podium de la poule est le
+// classement final.
 function checkAllPoulesFinalized() {
-  const allDone = POULE_LABELS.every((p) => finalizedPoules.has(p))
+  const allDone = POULE_LABELS.length > 1 && POULE_LABELS.every((p) => finalizedPoules.has(p))
   dartsFinaleEl.classList.toggle('hidden', !allDone)
   if (allDone && !dartsFinale) {
     dartsFinale = buildDartsFinale()
@@ -2275,14 +2533,40 @@ function checkAllPoulesFinalized() {
 }
 
 const dartsFinaleEl = document.getElementById('darts-finale')
-let dartsFinale = null // { semis: [{aNumber,bNumber,winnerNumber}, ...], final: {...}, petite: {...} }
+const dartsFinaleSemisTitle = document.getElementById('darts-finale-semis-title')
+let dartsFinale = null // { semis: [{aNumber,bNumber,winnerNumber}, ...], final: {...}, petite: {...}, title }
 
+// Demi-finales selon le nombre de poules :
+// - 2 poules : 1er A vs 2e B, 1er B vs 2e A
+// - 3 poules : les 3 premiers + le meilleur 2e (plus de victoires rapporte
+//   au nombre de matchs de sa poule, puis plus petit numero). Le meilleur 2e
+//   affronte le 1er d'une autre poule que la sienne.
+// - 4 poules : 1er A vs 1er C, 1er B vs 1er D
 function buildDartsFinale() {
+  const nth = (poule, rank) => computeStandings(poule)[rank].player.number
+  const semi = (aNumber, bNumber) => ({ aNumber, bNumber, winnerNumber: null })
+  let semis
+  let title
+  if (POULE_LABELS.length === 2) {
+    semis = [semi(nth('A', 0), nth('B', 1)), semi(nth('B', 0), nth('A', 1))]
+    title = 'Demi-finales — 1er Poule A vs 2e Poule B, 1er Poule B vs 2e Poule A'
+  } else if (POULE_LABELS.length === 3) {
+    const seconds = POULE_LABELS.map((poule, p) => {
+      const s = computeStandings(poule)[1]
+      return { poule, number: s.player.number, ratio: s.wins / (pouleSizes[p] - 1) }
+    }).sort((x, y) => y.ratio - x.ratio || x.number - y.number)
+    const best = seconds[0]
+    const opponent = POULE_LABELS.find((p) => p !== best.poule)
+    const others = POULE_LABELS.filter((p) => p !== opponent)
+    semis = [semi(nth(opponent, 0), best.number), semi(nth(others[0], 0), nth(others[1], 0))]
+    title = `Demi-finales — 1er Poule ${opponent} vs meilleur 2e (Poule ${best.poule}), 1er Poule ${others[0]} vs 1er Poule ${others[1]}`
+  } else {
+    semis = [semi(nth('A', 0), nth('C', 0)), semi(nth('B', 0), nth('D', 0))]
+    title = 'Demi-finales — 1er Poule A vs 1er Poule C, 1er Poule B vs 1er Poule D'
+  }
   return {
-    semis: [
-      { aNumber: computeStandings('A')[0].player.number, bNumber: computeStandings('C')[0].player.number, winnerNumber: null },
-      { aNumber: computeStandings('B')[0].player.number, bNumber: computeStandings('D')[0].player.number, winnerNumber: null },
-    ],
+    semis,
+    title,
     final: { aNumber: null, bNumber: null, winnerNumber: null },
     petite: { aNumber: null, bNumber: null, winnerNumber: null },
   }
@@ -2345,6 +2629,7 @@ function appendFinaleMatch(row, match, onPick) {
 
 function renderDartsFinale() {
   if (!dartsFinale) return
+  dartsFinaleSemisTitle.textContent = dartsFinale.title
 
   const semisRow = document.getElementById('darts-finale-semis')
   semisRow.innerHTML = ''
@@ -2373,6 +2658,7 @@ function showTournamentView() {
   dartsView.classList.add('hidden')
   tournament12View.classList.add('hidden')
   tournament9View.classList.add('hidden')
+  tournament8View.classList.add('hidden')
   tournamentView.classList.remove('hidden')
   // Le tableau vient peut-etre d'etre affiche apres avoir ete display:none :
   // les positions/connecteurs calcules pendant qu'il etait cache sont faux
@@ -2508,6 +2794,7 @@ function leaveActiveTournamentView() {
   if (!current) return
   if (current.format === DEFAULT_FORMAT) current.boxes = snapshotBoxes()
   else if (current.format === '12') current.boxes = snapshotT12Boxes()
+  else if (current.format === '8') current.boxes = snapshotT8Boxes()
   else if (current.format === '9') current.boxes = snapshotT9Boxes()
 }
 
@@ -2538,7 +2825,12 @@ function openTournamentTypeModal() {
   tournamentTypeList.innerHTML = ''
   TOURNAMENT_FORMATS.forEach((fmt) => {
     const btn = document.createElement('button')
-    btn.innerHTML = `${fmt.label}<br><small>${fmt.description}</small>`
+    btn.type = 'button'
+    btn.className = 'tournament-type-card'
+    btn.innerHTML =
+      `<span class="tournament-type-count">${fmt.label}</span>` +
+      `<span class="tournament-type-unit">équipes</span>` +
+      `<span class="tournament-type-desc">${fmt.description}</span>`
     btn.addEventListener('click', () => {
       tournamentTypeModalBackdrop.classList.add('hidden')
       openTeamSourceModal(fmt.id)
@@ -2719,22 +3011,52 @@ teamSourceModalBackdrop.addEventListener('drop', (e) => {
   importTeamsFile(e.dataTransfer.files[0])
 })
 
-// Convocations (tournoi 16 equipes) : 3 heures saisies (TS1-TS4 / TS5-TS8 /
-// paires 9 a 16), memorisees sur le tournoi, puis PDF genere dans l'ordre
-// exact du gestionnaire des equipes (getRankedTeams), avec la somme des
-// classements par paire, et classement individuel + club par joueur.
-const CONVOCATION_SLOTS = [
-  { key: 'ts14', from: 1, to: 4, accent: true, title: 'Têtes de série 1 à 4', missing: 'des TS 1 à 4' },
-  { key: 'ts58', from: 5, to: 8, accent: true, title: 'Têtes de série 5 à 8', missing: 'des TS 5 à 8' },
-  { key: 'rest', from: 9, to: Infinity, accent: false, title: null, missing: 'des paires suivantes' },
-]
-const CONVOCATION_TS_COUNT = 8
+// Convocations : heures saisies par groupe de paires, memorisees sur le
+// tournoi, puis PDF genere dans l'ordre exact du gestionnaire des equipes
+// (getRankedTeams), avec la somme des classements par paire, et classement
+// individuel + club par joueur.
+// - 16 equipes : TS1-TS4 / TS5-TS8 / paires 9 a 16
+// - 12 equipes : TS1-TS4 (exemptees du 1er tour) / paires 5 a 12
+const CONVOCATION_FORMATS = {
+  16: {
+    tsCount: 8,
+    restLabel: 'Convocation paires 9 à 16',
+    slots: [
+      { key: 'ts14', from: 1, to: 4, accent: true, title: 'Têtes de série 1 à 4', missing: 'des TS 1 à 4' },
+      { key: 'ts58', from: 5, to: 8, accent: true, title: 'Têtes de série 5 à 8', missing: 'des TS 5 à 8' },
+      { key: 'rest', from: 9, to: Infinity, accent: false, title: null, missing: 'des paires suivantes' },
+    ],
+  },
+  12: {
+    tsCount: 4,
+    restLabel: 'Convocation paires 5 à 12',
+    slots: [
+      { key: 'ts14', from: 1, to: 4, accent: true, title: 'Têtes de série 1 à 4', missing: 'des TS 1 à 4' },
+      { key: 'rest', from: 5, to: Infinity, accent: false, title: null, missing: 'des paires suivantes' },
+    ],
+  },
+  8: {
+    tsCount: 0,
+    restLabel: 'Convocation toutes les équipes',
+    slots: [{ key: 'rest', from: 1, to: Infinity, accent: false, title: 'Toutes les équipes', missing: 'des équipes' }],
+  },
+}
+
+function getConvocationFormat(t) {
+  return CONVOCATION_FORMATS[t.format] || CONVOCATION_FORMATS[DEFAULT_FORMAT]
+}
+
 const convocationModalBackdrop = document.getElementById('convocation-modal-backdrop')
 const convocationInputs = {
   ts14: document.getElementById('convocation-ts14'),
   ts58: document.getElementById('convocation-ts58'),
   rest: document.getElementById('convocation-rest'),
 }
+const convocationSlotRows = {
+  ts14: document.getElementById('convocation-ts14-row'),
+  ts58: document.getElementById('convocation-ts58-row'),
+}
+const convocationRestLabel = document.getElementById('convocation-rest-label')
 const convocationError = document.getElementById('convocation-error')
 const convocationGenerateBtn = document.getElementById('convocation-generate-btn')
 
@@ -2750,7 +3072,7 @@ function getConvocationTimes(t) {
   return { ts14: c.ts14 || '', ts58: c.ts58 || '', rest: c.rest || '' }
 }
 
-document.getElementById('convocation-btn').addEventListener('click', () => {
+function openConvocationModal() {
   const active = getActiveTournament()
   if (!active) return
   const n = active.teams.length
@@ -2758,16 +3080,25 @@ document.getElementById('convocation-btn').addEventListener('click', () => {
     alert('Aucune équipe dans ce tournoi.')
     return
   }
+  const fmt = getConvocationFormat(active)
+  Object.entries(convocationSlotRows).forEach(([key, row]) => {
+    row.classList.toggle('hidden', !fmt.slots.some((slot) => slot.key === key))
+  })
+  convocationRestLabel.textContent = fmt.restLabel
   const times = getConvocationTimes(active)
-  CONVOCATION_SLOTS.forEach((slot) => {
+  fmt.slots.forEach((slot) => {
     const input = convocationInputs[slot.key]
     input.value = times[slot.key]
     input.disabled = n < slot.from
   })
   showConvocationError('')
   convocationModalBackdrop.classList.remove('hidden')
-  convocationInputs.ts14.focus()
-})
+  convocationInputs[fmt.slots[0].key].focus()
+}
+
+document.getElementById('convocation-btn').addEventListener('click', openConvocationModal)
+document.getElementById('t8-convocation-btn').addEventListener('click', openConvocationModal)
+document.getElementById('t12-convocation-btn').addEventListener('click', openConvocationModal)
 
 document.getElementById('convocation-cancel-btn').addEventListener('click', () => {
   convocationModalBackdrop.classList.add('hidden')
@@ -2795,12 +3126,12 @@ function convocationPlayer(p) {
   return { name: fullName(p), classement: (p.classement || '').trim(), club: (p.club || '').trim() }
 }
 
-function convocationRows(teams, startRank) {
+function convocationRows(teams, startRank, tsCount) {
   return teams.map((team, i) => {
     const rank = startRank + i
     const sum = classementSum(team)
     return {
-      rank: rank <= CONVOCATION_TS_COUNT ? `TS${rank}` : String(rank),
+      rank: rank <= tsCount ? `TS${rank}` : String(rank),
       points: sum === UNRANKED ? 'NC' : String(Math.round(sum * 100) / 100),
       players: [convocationPlayer(team.j1), convocationPlayer(team.j2)],
     }
@@ -2816,13 +3147,14 @@ async function buildTournamentConvocationPdf(active) {
   const last = ranked.length
   const times = getConvocationTimes(active)
   const logo = await loadLogoForPdf()
-  const sections = CONVOCATION_SLOTS.map((slot) => {
+  const fmt = getConvocationFormat(active)
+  const sections = fmt.slots.map((slot) => {
     const to = Math.min(slot.to, last)
     return {
       title: slot.title || `Paires ${slot.from} à ${to}`,
       time: times[slot.key],
       accent: slot.accent,
-      rows: convocationRows(ranked.slice(slot.from - 1, to), slot.from),
+      rows: convocationRows(ranked.slice(slot.from - 1, to), slot.from, fmt.tsCount),
     }
   })
   const doc = ConvocationPdf.buildConvocationPdf(window.jspdf.jsPDF, {
@@ -2840,8 +3172,8 @@ convocationGenerateBtn.addEventListener('click', async () => {
   const active = getActiveTournament()
   const ranked = getRankedTeams()
   const last = ranked.length
-  const times = {}
-  for (const slot of CONVOCATION_SLOTS) {
+  const times = getConvocationTimes(active)
+  for (const slot of getConvocationFormat(active).slots) {
     times[slot.key] = convocationInputs[slot.key].value
     if (last >= slot.from && !times[slot.key]) {
       showConvocationError(`Saisissez l'heure de convocation ${slot.missing}.`)
@@ -2920,7 +3252,7 @@ async function copyText(text) {
   }
 }
 
-document.getElementById('send-convocation-btn').addEventListener('click', () => {
+function openSendConvocationModal() {
   const active = getActiveTournament()
   if (!active) return
   const copied = (copiedPhonesByTournament[active.id] = copiedPhonesByTournament[active.id] || new Set())
@@ -2966,7 +3298,11 @@ document.getElementById('send-convocation-btn').addEventListener('click', () => 
     sendPhoneList.appendChild(li)
   })
   sendModalBackdrop.classList.remove('hidden')
-})
+}
+
+document.getElementById('send-convocation-btn').addEventListener('click', openSendConvocationModal)
+document.getElementById('t12-send-convocation-btn').addEventListener('click', openSendConvocationModal)
+document.getElementById('t8-send-convocation-btn').addEventListener('click', openSendConvocationModal)
 
 document.getElementById('send-close-btn').addEventListener('click', () => {
   sendModalBackdrop.classList.add('hidden')
@@ -3135,7 +3471,7 @@ function restoreDartsState() {
       if (!saved) return
       player.matchesPlayed = saved.matchesPlayed || 0
       ;(saved.dots || []).forEach((state, dotIndex) => {
-        if (state) player.dotEls[dotIndex].classList.add(state)
+        if (state && player.dotEls[dotIndex]) player.dotEls[dotIndex].classList.add(state)
       })
     })
   }
@@ -3154,7 +3490,7 @@ function restoreDartsState() {
       if (!m && saved.classement) {
         m = { poule: saved.poule, a: byPlayer(saved.aNumber), b: byPlayer(saved.bNumber), classement: true, done: false }
         dartsSchedule.push(m)
-        dartsQueues[queueIndexForPoule(saved.poule)].push(m)
+        dartsQueues[queueIndexForPoule()].push(m)
       }
       if (!m) return
       m.done = saved.done
@@ -3163,8 +3499,9 @@ function restoreDartsState() {
       if (saved.bDotIndex !== undefined) m.bDotIndex = saved.bDotIndex
     })
 
-    // Les matchs "faits" sont toujours un prefixe de chaque file (cible 1 et
-    // cible 2 sont jouees dans l'ordre de leur file respective).
+    // Les files sont reconstruites dans leur ordre d'origine, or un match a pu
+    // etre remonte (cf assignNextMatch) : on remet les matchs faits en tete.
+    dartsQueues = dartsQueues.map((queue) => [...queue.filter((m) => m.done), ...queue.filter((m) => !m.done)])
     dartsQueueIndex = [0, 1].map((c) => dartsQueues[c].filter((m) => m.done).length)
     assignNextMatch(0)
     assignNextMatch(1)
