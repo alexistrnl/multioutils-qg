@@ -1553,7 +1553,11 @@ document.getElementById('t8-fill-random-btn').addEventListener('click', () => {
 // Tirage du 1er tour : les 8 equipes placees au hasard dans la 1re colonne.
 document.getElementById('t8-draw-round1-btn').addEventListener('click', () => {
   if (!ensureTeamNames()) return
-  const draw = shuffleArray(getActiveTournament().teams).slice(0, 8)
+  const ranked = getRankedTeams()
+  // Case 1 : TS2, case 8 : TS1 ; cases 3 et 6 : tirage 3/4 ; autres : tirage 5 a 8
+  const ts34 = shuffleArray(ranked.slice(2, 4))
+  const rest = shuffleArray(ranked.slice(4, 8))
+  const draw = [ranked[1], rest[0], ts34[0], rest[1], rest[2], ts34[1], rest[3], ranked[0]]
   const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t8-box="col1-${i}"]`))
   animateFillBoxes(boxes, draw)
 })
