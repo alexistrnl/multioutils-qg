@@ -1857,8 +1857,10 @@ function t12FillBoxes(names, teams) {
 document.getElementById('t12-draw-round1-btn').addEventListener('click', () => {
   if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
-  const pool = ranked.filter((_, i) => i + 1 > 4)
-  const draw = shuffleArray(pool).slice(0, 8)
+  // Cases 1, 3, 6, 8 : tirage parmi les equipes 5 a 8 ; cases 2, 4, 5, 7 : parmi 9 a 12
+  const mid = shuffleArray(ranked.slice(4, 8))
+  const low = shuffleArray(ranked.slice(8, 12))
+  const draw = [mid[0], low[0], mid[1], low[1], low[2], mid[2], low[3], mid[3]]
   t12FillBoxes(['left-1', 'left-2', 'left-3', 'left-4', 'left-5', 'left-6', 'left-7', 'left-8'], draw)
 })
 
@@ -3362,7 +3364,7 @@ function animateFillBoxes(boxes, teams) {
   teams.forEach((team, i) => {
     setTimeout(() => {
       const box = boxes[i]
-      if (!box) return
+      if (!box || !team) return
       boxTextTarget(box).textContent = teamLabel(team)
       box.classList.remove('pop-in')
       void box.offsetWidth
