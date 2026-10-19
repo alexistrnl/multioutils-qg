@@ -1862,14 +1862,16 @@ document.getElementById('t12-draw-round1-btn').addEventListener('click', () => {
   const low = shuffleArray(ranked.slice(8, 12))
   const draw = [mid[0], low[0], mid[1], low[1], low[2], mid[2], low[3], mid[3]]
   t12FillBoxes(['left-1', 'left-2', 'left-3', 'left-4', 'left-5', 'left-6', 'left-7', 'left-8'], draw)
+  // TS2 en haut du 2nd tour, TS1 en bas : places fixes, pas de tirage
+  setTimeout(() => t12FillBoxes(['right-1', 'right-7'], [ranked[1], ranked[0]]), draw.length * 150)
 })
 
+// Tirage du 2nd tour : TS3 et TS4 dans les 2 cases restantes
 document.getElementById('t12-draw-round2-btn').addEventListener('click', () => {
   if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
-  const pool = ranked.filter((_, i) => i + 1 <= 4)
-  const draw = shuffleArray(pool).slice(0, 4)
-  t12FillBoxes(['right-1', 'right-3', 'right-5', 'right-7'], draw)
+  const draw = shuffleArray(ranked.slice(2, 4))
+  t12FillBoxes(['right-3', 'right-5'], draw)
 })
 
 document.getElementById('t12-reset-draw-btn').addEventListener('click', () => {
