@@ -404,9 +404,11 @@ convPdfBtn.addEventListener('click', async () => {
         ranks.push(i + 1)
         rows.push({ rank: String(i + 1), points: convPoints(team), players: [convPdfPlayer(team.j1), convPdfPlayer(team.j2)] })
       })
-      return { title: ranks.length ? convSectionTitle(ranks) : '', time, accent: s === 0, rows }
+      return { title: ranks.length ? convSectionTitle(ranks) : '', time, accent: s === 0, rows, best: ranks.length ? ranks[0] : Infinity }
     })
-    .sort((a, b) => a.time.localeCompare(b.time))
+    // Ordre des TS : la section qui contient la meilleure paire en premier,
+    // quelle que soit son heure de convocation.
+    .sort((a, b) => a.best - b.best)
 
   convPdfBtn.disabled = true
   try {
