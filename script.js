@@ -358,6 +358,7 @@ function renderTeams12() {
 
   const n = active.teams.length
   t12TeamCount.textContent = `${n} équipe${n > 1 ? 's' : ''}`
+  fillFixedSeeds12()
   saveState()
 }
 
@@ -379,6 +380,7 @@ function renderTeams8() {
 
   const n = active.teams.length
   t8TeamCount.textContent = `${n} équipe${n > 1 ? 's' : ''}`
+  fillFixedSeeds8()
   saveState()
 }
 
@@ -915,19 +917,40 @@ document.querySelectorAll('#round-3 .bracket-box').forEach((box, i) => {
 // TS1 (bas) et TS2 (haut) de la colonne 3 sont deterministes (dependent
 // uniquement du classement courant) : on les inscrit directement, sans
 // attendre un clic ni le bouton "Completer 3eme tour".
+// TS placees d'office (sans tirage) : remplies instantanement, sans animation.
+function placeFixedSeeds(pairs) {
+  pairs.forEach(([box, team]) => {
+    if (!box || !team) return
+    box.textContent = teamLabel(team)
+    box.classList.remove('pop-in')
+  })
+}
+
 function fillFixedSeeds() {
   const ranked = getRankedTeams()
   const allBoxes = Array.from(document.querySelectorAll('#round-3 .bracket-box'))
-  ;[
+  placeFixedSeeds([
     [allBoxes[0], ranked[1]],
     [allBoxes[6], ranked[0]],
-  ].forEach(([box, team]) => {
-    if (!box || !team) return
-    const text = teamLabel(team)
-    if (box.textContent === text) return
-    box.textContent = text
-    popIn(box)
-  })
+  ])
+}
+
+// 12 equipes : TS2 en haut du 2nd tour, TS1 en bas
+function fillFixedSeeds12() {
+  const ranked = getRankedTeams()
+  placeFixedSeeds([
+    [document.querySelector('[data-t12-box="right-1"]'), ranked[1]],
+    [document.querySelector('[data-t12-box="right-7"]'), ranked[0]],
+  ])
+}
+
+// 8 equipes : TS2 en case 1, TS1 en case 8 du 1er tour
+function fillFixedSeeds8() {
+  const ranked = getRankedTeams()
+  placeFixedSeeds([
+    [document.querySelector('[data-t8-box="col1-1"]'), ranked[1]],
+    [document.querySelector('[data-t8-box="col1-8"]'), ranked[0]],
+  ])
 }
 
 const FAKE_PRENOMS = [
@@ -1551,25 +1574,24 @@ document.getElementById('t8-fill-random-btn').addEventListener('click', () => {
 })
 
 // Tirage du 1er tour : les 8 equipes placees au hasard dans la 1re colonne.
-// Case 1 : TS2, case 8 : TS1 ; cases 3 et 6 : tirage 3/4 ; autres : tirage 5 a 8
-function t8DrawRound1(parity) {
+// Cases 1 (TS2) et 8 (TS1) placees d'office (fillFixedSeeds8). Un bouton
+// tire les equipes 3 et 4 dans les cases 3 et 5, un autre tire les equipes
+// 5 a 8 dans les cases 2, 4, 6 et 7.
+function t8Draw(caseNumbers, pool) {
   if (!ensureTeamNames()) return
-  const ranked = getRankedTeams()
-  const ts1 = ranked.slice(0, 1)
-  const ts2 = ranked.slice(1, 2)
-  const ts34 = ranked.slice(2, 4)
-  const rest = ranked.slice(4, 8)
-  const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t8-box="col1-${i}"]`))
-  drawFirstColumnHalf(boxes, [ts2, rest, ts34, rest, rest, ts34, rest, ts1], parity)
+  fillFixedSeeds8()
+  const boxes = caseNumbers.map((i) => document.querySelector(`[data-t8-box="col1-${i}"]`))
+  animateFillBoxes(boxes, shuffleArray(pool))
 }
 
-document.getElementById('t8-draw-round1-btn').addEventListener('click', () => t8DrawRound1(0))
-document.getElementById('t8-draw-round1b-btn').addEventListener('click', () => t8DrawRound1(1))
+document.getElementById('t8-draw-ts34-btn').addEventListener('click', () => t8Draw([3, 5], getRankedTeams().slice(2, 4)))
+document.getElementById('t8-draw-rest-btn').addEventListener('click', () => t8Draw([2, 4, 6, 7], getRankedTeams().slice(4, 8)))
 
 document.getElementById('t8-reset-draw-btn').addEventListener('click', () => {
   if (!confirm('Réinitialiser le tirage ? Les cases du tableau seront vidées (les équipes restent).')) return
 
   restoreT8Boxes({})
+  fillFixedSeeds8()
   saveState()
 })
 
@@ -1869,9 +1891,8 @@ function t12DrawRound1(parity) {
   const mid = ranked.slice(4, 8)
   const low = ranked.slice(8, 12)
   const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t12-box="left-${i}"]`))
-  const delay = drawFirstColumnHalf(boxes, [mid, low, mid, low, low, mid, low, mid], parity)
-  // TS2 en haut du 2nd tour, TS1 en bas : places fixes, pas de tirage
-  setTimeout(() => t12FillBoxes(['right-1', 'right-7'], [ranked[1], ranked[0]]), delay)
+  drawFirstColumnHalf(boxes, [mid, low, mid, low, low, mid, low, mid], parity)
+  fillFixedSeeds12()
 }
 
 document.getElementById('t12-draw-round1-btn').addEventListener('click', () => t12DrawRound1(0))
@@ -1889,6 +1910,7 @@ document.getElementById('t12-reset-draw-btn').addEventListener('click', () => {
   if (!confirm('Réinitialiser le tirage ? Les cases du tableau seront vidées (les équipes restent).')) return
 
   restoreT12Boxes({})
+  fillFixedSeeds12()
   saveState()
 })
 
@@ -3430,15 +3452,15 @@ function drawRound2() {
 function drawRound3() {
   if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
-  const [ts1, ts2, ts3, ts4] = ranked
+  const [, , ts3, ts4] = ranked
 
   const [milieuHaut, milieuBas] = shuffleArray([ts3, ts4])
 
+  // TS1/TS2 sont deja placees sans animation (fillFixedSeeds) : seules
+  // TS3/TS4 sont tirees et animees.
   const allBoxes = Array.from(document.querySelectorAll('#round-3 .bracket-box'))
-  const boxes = [allBoxes[0], allBoxes[2], allBoxes[4], allBoxes[6]]
-  const teams = [ts2, milieuHaut, milieuBas, ts1]
-
-  animateFillBoxes(boxes, teams)
+  fillFixedSeeds()
+  animateFillBoxes([allBoxes[2], allBoxes[4]], [milieuHaut, milieuBas])
 }
 
 document.getElementById('draw-round1-btn').addEventListener('click', () => drawRound1(0))
