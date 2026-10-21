@@ -1551,16 +1551,20 @@ document.getElementById('t8-fill-random-btn').addEventListener('click', () => {
 })
 
 // Tirage du 1er tour : les 8 equipes placees au hasard dans la 1re colonne.
-document.getElementById('t8-draw-round1-btn').addEventListener('click', () => {
+// Case 1 : TS2, case 8 : TS1 ; cases 3 et 6 : tirage 3/4 ; autres : tirage 5 a 8
+function t8DrawRound1(parity) {
   if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
-  // Case 1 : TS2, case 8 : TS1 ; cases 3 et 6 : tirage 3/4 ; autres : tirage 5 a 8
-  const ts34 = shuffleArray(ranked.slice(2, 4))
-  const rest = shuffleArray(ranked.slice(4, 8))
-  const draw = [ranked[1], rest[0], ts34[0], rest[1], rest[2], ts34[1], rest[3], ranked[0]]
+  const ts1 = ranked.slice(0, 1)
+  const ts2 = ranked.slice(1, 2)
+  const ts34 = ranked.slice(2, 4)
+  const rest = ranked.slice(4, 8)
   const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t8-box="col1-${i}"]`))
-  animateFillBoxes(boxes, draw)
-})
+  drawFirstColumnHalf(boxes, [ts2, rest, ts34, rest, rest, ts34, rest, ts1], parity)
+}
+
+document.getElementById('t8-draw-round1-btn').addEventListener('click', () => t8DrawRound1(0))
+document.getElementById('t8-draw-round1b-btn').addEventListener('click', () => t8DrawRound1(1))
 
 document.getElementById('t8-reset-draw-btn').addEventListener('click', () => {
   if (!confirm('Réinitialiser le tirage ? Les cases du tableau seront vidées (les équipes restent).')) return
@@ -1858,17 +1862,20 @@ function t12FillBoxes(names, teams) {
   animateFillBoxes(boxes, teams)
 }
 
-document.getElementById('t12-draw-round1-btn').addEventListener('click', () => {
+// Cases 1, 3, 6, 8 : tirage parmi les equipes 5 a 8 ; cases 2, 4, 5, 7 : parmi 9 a 12
+function t12DrawRound1(parity) {
   if (!ensureTeamNames()) return
   const ranked = getRankedTeams()
-  // Cases 1, 3, 6, 8 : tirage parmi les equipes 5 a 8 ; cases 2, 4, 5, 7 : parmi 9 a 12
-  const mid = shuffleArray(ranked.slice(4, 8))
-  const low = shuffleArray(ranked.slice(8, 12))
-  const draw = [mid[0], low[0], mid[1], low[1], low[2], mid[2], low[3], mid[3]]
-  t12FillBoxes(['left-1', 'left-2', 'left-3', 'left-4', 'left-5', 'left-6', 'left-7', 'left-8'], draw)
+  const mid = ranked.slice(4, 8)
+  const low = ranked.slice(8, 12)
+  const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t12-box="left-${i}"]`))
+  const delay = drawFirstColumnHalf(boxes, [mid, low, mid, low, low, mid, low, mid], parity)
   // TS2 en haut du 2nd tour, TS1 en bas : places fixes, pas de tirage
-  setTimeout(() => t12FillBoxes(['right-1', 'right-7'], [ranked[1], ranked[0]]), draw.length * 150)
-})
+  setTimeout(() => t12FillBoxes(['right-1', 'right-7'], [ranked[1], ranked[0]]), delay)
+}
+
+document.getElementById('t12-draw-round1-btn').addEventListener('click', () => t12DrawRound1(0))
+document.getElementById('t12-draw-round1b-btn').addEventListener('click', () => t12DrawRound1(1))
 
 // Tirage du 2nd tour : TS3 et TS4 dans les 2 cases restantes
 document.getElementById('t12-draw-round2-btn').addEventListener('click', () => {
@@ -3380,14 +3387,30 @@ function animateFillBoxes(boxes, teams) {
   })
 }
 
-function drawRound1() {
-  if (!ensureTeamNames()) return
-  const ranked = getRankedTeams()
-  const yellowPool = ranked.filter((_, i) => i + 1 > 8)
-  const draw = shuffleArray(yellowPool).slice(0, 8)
+// Tirage d'une moitie de la 1ere colonne : parity 0 = cases impaires
+// (1, 3, 5, 7), parity 1 = cases paires (2, 4, 6, 8). pools[i] = equipes
+// possibles pour la case i+1. Les equipes deja placees dans l'autre moitie
+// sont exclues, pour qu'aucune equipe ne sorte deux fois.
+function drawFirstColumnHalf(boxes, pools, parity) {
+  const indexes = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => i % 2 === parity)
+  const others = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => i % 2 !== parity)
+  const used = new Set(others.map((i) => boxes[i] && boxTextTarget(boxes[i]).textContent.trim()).filter(Boolean))
+  const draw = indexes.map((i) => {
+    const candidates = (pools[i] || []).filter((t) => !used.has(teamLabel(t)))
+    const team = candidates[Math.floor(Math.random() * candidates.length)]
+    if (team) used.add(teamLabel(team))
+    return team
+  })
+  animateFillBoxes(indexes.map((i) => boxes[i]), draw)
+  return draw.length * 150
+}
 
+// 16 equipes : les 8 cases du 1er tour sont tirees parmi les paires 9 a 16
+function drawRound1(parity) {
+  if (!ensureTeamNames()) return
+  const pool = getRankedTeams().slice(8, 16)
   const boxes = Array.from(document.querySelectorAll('#round-1 .bracket-box'))
-  animateFillBoxes(boxes, draw)
+  drawFirstColumnHalf(boxes, boxes.map(() => pool), parity)
 }
 
 function drawRound2() {
@@ -3418,7 +3441,8 @@ function drawRound3() {
   animateFillBoxes(boxes, teams)
 }
 
-document.getElementById('draw-round1-btn').addEventListener('click', drawRound1)
+document.getElementById('draw-round1-btn').addEventListener('click', () => drawRound1(0))
+document.getElementById('draw-round1b-btn').addEventListener('click', () => drawRound1(1))
 document.getElementById('draw-round2-btn').addEventListener('click', drawRound2)
 document.getElementById('draw-round3-btn').addEventListener('click', drawRound3)
 
