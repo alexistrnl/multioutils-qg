@@ -1884,19 +1884,17 @@ function t12FillBoxes(names, teams) {
   animateFillBoxes(boxes, teams)
 }
 
-// Cases 1, 3, 6, 8 : tirage parmi les equipes 5 a 8 ; cases 2, 4, 5, 7 : parmi 9 a 12
-function t12DrawRound1(parity) {
+// 1er bouton : equipes 5 a 8 dans les cases 1, 3, 6, 8 ;
+// 2e bouton : equipes 9 a 12 dans les cases 2, 4, 5, 7
+function t12DrawRound1(caseNumbers, pool) {
   if (!ensureTeamNames()) return
-  const ranked = getRankedTeams()
-  const mid = ranked.slice(4, 8)
-  const low = ranked.slice(8, 12)
-  const boxes = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => document.querySelector(`[data-t12-box="left-${i}"]`))
-  drawFirstColumnHalf(boxes, [mid, low, mid, low, low, mid, low, mid], parity)
   fillFixedSeeds12()
+  const boxes = caseNumbers.map((i) => document.querySelector(`[data-t12-box="left-${i}"]`))
+  animateFillBoxes(boxes, shuffleArray(pool))
 }
 
-document.getElementById('t12-draw-round1-btn').addEventListener('click', () => t12DrawRound1(0))
-document.getElementById('t12-draw-round1b-btn').addEventListener('click', () => t12DrawRound1(1))
+document.getElementById('t12-draw-round1-btn').addEventListener('click', () => t12DrawRound1([1, 3, 6, 8], getRankedTeams().slice(4, 8)))
+document.getElementById('t12-draw-round1b-btn').addEventListener('click', () => t12DrawRound1([2, 4, 5, 7], getRankedTeams().slice(8, 12)))
 
 // Tirage du 2nd tour : TS3 et TS4 dans les 2 cases restantes
 document.getElementById('t12-draw-round2-btn').addEventListener('click', () => {
