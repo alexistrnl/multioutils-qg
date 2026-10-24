@@ -99,6 +99,21 @@ html, body {
   animation: bracket-pop-in 0.25s ease;
 }
 
+.t8-box.pickable {
+  cursor: pointer;
+}
+
+.t8-box.pickable:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.t8-box.champion {
+  border-color: gold;
+  background: rgba(255, 215, 0, 0.15);
+  color: gold;
+  font-weight: 700;
+}
+
 .t12-columns {
   position: relative;
   display: flex;

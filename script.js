@@ -860,7 +860,7 @@ function showWinnerPicker(targetBox, sourceEls) {
     label: el.textContent,
     onPick: () => {
       targetBox.textContent = el.textContent
-      if (targetBox.dataset.box === 'round-5-2' || targetBox.dataset.t12Box === 'col5-1') {
+      if (targetBox.dataset.box === 'round-5-2' || targetBox.dataset.t12Box === 'col5-1' || targetBox.dataset.t8Box === 'col4-1') {
         targetBox.classList.add('champion')
       }
       popIn(targetBox)
@@ -1045,6 +1045,7 @@ function restoreT8Boxes(snap) {
     const s = snap && snap[box.dataset.t8Box]
     box.textContent = s ? s.text : ''
     box.classList.remove('pop-in')
+    box.classList.toggle('champion', box.dataset.t8Box === 'col4-1' && !!box.textContent)
   })
 }
 
@@ -1374,6 +1375,33 @@ function drawT8Connectors() {
 }
 
 window.addEventListener('resize', drawT8Connectors)
+
+// Table case-cible -> [case-source1, case-source2], deduite de T8_LINKS (meme
+// principe que T12_BOX_SOURCES) : un clic sur une case du tour suivant
+// propose les 2 equipes du match pour choisir le gagnant.
+const T8_BOX_SOURCES = {}
+for (const link of T8_LINKS) {
+  for (const pair of link.pairs) {
+    T8_BOX_SOURCES[`${link.to}-${pair.to}`] = pair.from.map((idx) => `${link.from}-${idx}`)
+  }
+}
+
+document.querySelectorAll('.t8-box').forEach((box) => {
+  if (T8_BOX_SOURCES[box.dataset.t8Box]) box.classList.add('pickable')
+})
+
+document.querySelector('.t8-bracket').addEventListener('click', (e) => {
+  const box = e.target.closest('.t8-box')
+  if (!box) return
+
+  const sources = T8_BOX_SOURCES[box.dataset.t8Box]
+  if (!sources) return
+
+  const sourceEls = sources.map((id) => document.querySelector(`[data-t8-box="${id}"]`)).filter(Boolean)
+  if (sourceEls.length < 2 || sourceEls.some((el) => !el.textContent.trim())) return
+
+  showWinnerPicker(box, sourceEls)
+})
 
 function showTournament9View(t) {
   homePage.classList.add('hidden')
