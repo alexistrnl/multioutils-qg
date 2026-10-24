@@ -1160,22 +1160,28 @@ function renderRoute() {
   // (ex. navigation via le bouton precedent du navigateur), on la referme.
   myTournamentsModalBackdrop.classList.add('hidden')
 
-  // Les autres vues ne connaissent pas l'inventaire : on le masque ici, a
-  // chaque changement de route, et on ne le reaffiche que sur /inventaire.
+  // Les autres vues ne connaissent pas les pages autonomes (inventaire,
+  // planning, convocation, partenariat) : on les masque toutes ici, a chaque
+  // changement de route, et on ne reaffiche que celle demandee.
   inventoryView.classList.add('hidden')
+  planningView.classList.add('hidden')
+  convView.classList.add('hidden')
+  partView.classList.add('hidden')
   document.documentElement.classList.remove('inventory-open')
   if (path === '/inventaire') {
     showInventoryView()
     return
   }
-  planningView.classList.add('hidden')
   if (path === '/planning') {
     showPlanningView()
     return
   }
-  convView.classList.add('hidden')
   if (path === '/convocation') {
     showConvocationView()
+    return
+  }
+  if (path === '/partenariat') {
+    showPartenariatView()
     return
   }
 
@@ -1531,6 +1537,8 @@ document.getElementById('planning-open-btn').addEventListener('click', () => nav
 document.getElementById('planning-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('convocation-open-btn').addEventListener('click', () => navigateTo('/convocation'))
 document.getElementById('conv-home-btn').addEventListener('click', () => navigateTo('/accueil'))
+document.getElementById('partenariat-open-btn').addEventListener('click', () => navigateTo('/partenariat'))
+document.getElementById('part-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament12-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament9-home-btn').addEventListener('click', () => navigateTo('/accueil'))
 document.getElementById('tournament8-home-btn').addEventListener('click', () => navigateTo('/accueil'))

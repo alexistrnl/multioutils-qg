@@ -419,6 +419,7 @@ html, body {
 
 .home-darts h2,
 .home-convocation h2,
+.home-partenariat h2,
 .home-inventory h2,
 .home-planning h2 {
   margin: 0 0 4px;
@@ -2699,5 +2700,242 @@ body.panel-collapsed .right-overlay {
 
   .conv-slots li {
     grid-template-columns: 60px 1fr 60px auto;
+  }
+}
+
+/* Suivi partenariat : cadre d'ajout puis un cadre par partenaire (grille). */
+#part-view {
+  min-height: 100vh;
+  padding: 16px 24px 40px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #000;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#part-view.hidden {
+  display: none;
+}
+
+.part-panel {
+  gap: 12px;
+}
+
+.part-add {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.part-add-total {
+  flex: 0 0 160px;
+}
+
+.part-add .planning-copy-btn {
+  padding: 9px 20px;
+}
+
+#part-view input {
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+#part-view input:focus {
+  outline: none;
+  border-color: #fcd34d;
+}
+
+#part-view input.invalid {
+  border-color: red;
+}
+
+.part-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.part-empty {
+  color: #666;
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.part-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  background: #0a0a0a;
+  border: 1px solid #262626;
+  border-radius: 12px;
+}
+
+.part-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.part-card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.part-bar {
+  height: 14px;
+  background: #111;
+  border: 1px solid #262626;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.part-bar-fill {
+  height: 100%;
+  background: #fcd34d;
+  transition: width 0.2s ease;
+}
+
+.part-bar.full .part-bar-fill {
+  background: red;
+}
+
+.part-figures {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.part-figures span:last-child {
+  color: #4ade80;
+}
+
+.part-figures span.part-over {
+  color: #ff4d4d;
+}
+
+.part-budget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.part-budget input {
+  width: 110px;
+  text-align: right;
+}
+
+.part-expense-form {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #1a1a1a;
+}
+
+.part-expense-form .planning-copy-btn {
+  grid-column: 1 / -1;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+}
+
+.part-expenses {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.part-expenses li:not(.part-empty) {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid #1a1a1a;
+  font-size: 0.85rem;
+}
+
+.part-expense-date {
+  color: #999;
+}
+
+.part-expense-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.part-expense-amount {
+  font-weight: 600;
+}
+
+.part-delete-btn,
+.part-expense-remove {
+  flex-shrink: 0;
+  background: transparent;
+  color: #ff4d4d;
+  border: 1px solid #661111;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+}
+
+.part-delete-btn {
+  width: 32px;
+  height: 32px;
+  font-size: 1.1rem;
+}
+
+.part-expense-remove {
+  width: 24px;
+  height: 24px;
+  font-size: 0.9rem;
+  border-color: transparent;
+}
+
+.part-delete-btn:hover,
+.part-expense-remove:hover {
+  border-color: red;
+}
+
+@media (max-width: 800px) {
+  #part-view {
+    padding: 16px;
+  }
+
+  .part-add {
+    flex-wrap: wrap;
+  }
+
+  .part-add-total {
+    flex: 1 1 120px;
+  }
+
+  .part-list {
+    grid-template-columns: 1fr;
   }
 }
