@@ -577,6 +577,15 @@ addBtn.addEventListener('click', () => {
   modalBackdrop.classList.remove('hidden')
 })
 
+document.getElementById('fill-random-btn').addEventListener('click', () => {
+  const active = getActiveTournament()
+  const missing = 16 - active.teams.length
+  if (missing <= 0) return
+
+  active.teams.push(...generateFakeTeams(missing))
+  renderTeams()
+})
+
 document.getElementById('cancel-team-btn').addEventListener('click', closeModal)
 
 document.getElementById('validate-team-btn').addEventListener('click', () => {
@@ -3443,30 +3452,12 @@ function animateFillBoxes(boxes, teams) {
   })
 }
 
-// Tirage d'une moitie de la 1ere colonne : parity 0 = cases impaires
-// (1, 3, 5, 7), parity 1 = cases paires (2, 4, 6, 8). pools[i] = equipes
-// possibles pour la case i+1. Les equipes deja placees dans l'autre moitie
-// sont exclues, pour qu'aucune equipe ne sorte deux fois.
-function drawFirstColumnHalf(boxes, pools, parity) {
-  const indexes = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => i % 2 === parity)
-  const others = [0, 1, 2, 3, 4, 5, 6, 7].filter((i) => i % 2 !== parity)
-  const used = new Set(others.map((i) => boxes[i] && boxTextTarget(boxes[i]).textContent.trim()).filter(Boolean))
-  const draw = indexes.map((i) => {
-    const candidates = (pools[i] || []).filter((t) => !used.has(teamLabel(t)))
-    const team = candidates[Math.floor(Math.random() * candidates.length)]
-    if (team) used.add(teamLabel(team))
-    return team
-  })
-  animateFillBoxes(indexes.map((i) => boxes[i]), draw)
-  return draw.length * 150
-}
-
-// 16 equipes : les 8 cases du 1er tour sont tirees parmi les paires 9 a 16
-function drawRound1(parity) {
+// 16 equipes : cases 1-3-6-8 du 1er tour tirees parmi les equipes 9 a 12,
+// cases 2-4-5-7 parmi les equipes 13 a 16
+function drawRound1(caseNumbers, pool) {
   if (!ensureTeamNames()) return
-  const pool = getRankedTeams().slice(8, 16)
-  const boxes = Array.from(document.querySelectorAll('#round-1 .bracket-box'))
-  drawFirstColumnHalf(boxes, boxes.map(() => pool), parity)
+  const allBoxes = Array.from(document.querySelectorAll('#round-1 .bracket-box'))
+  animateFillBoxes(caseNumbers.map((i) => allBoxes[i - 1]), shuffleArray(pool))
 }
 
 function drawRound2() {
@@ -3497,8 +3488,8 @@ function drawRound3() {
   animateFillBoxes([allBoxes[2], allBoxes[4]], [milieuHaut, milieuBas])
 }
 
-document.getElementById('draw-round1-btn').addEventListener('click', () => drawRound1(0))
-document.getElementById('draw-round1b-btn').addEventListener('click', () => drawRound1(1))
+document.getElementById('draw-round1-btn').addEventListener('click', () => drawRound1([1, 3, 6, 8], getRankedTeams().slice(8, 12)))
+document.getElementById('draw-round1b-btn').addEventListener('click', () => drawRound1([2, 4, 5, 7], getRankedTeams().slice(12, 16)))
 document.getElementById('draw-round2-btn').addEventListener('click', drawRound2)
 document.getElementById('draw-round3-btn').addEventListener('click', drawRound3)
 

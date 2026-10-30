@@ -1537,6 +1537,11 @@ body.panel-collapsed .right-overlay {
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+#tournament-view .draw-buttons .draw-btn {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
 .reset-btn {
   align-self: flex-end;
   width: 40px;
